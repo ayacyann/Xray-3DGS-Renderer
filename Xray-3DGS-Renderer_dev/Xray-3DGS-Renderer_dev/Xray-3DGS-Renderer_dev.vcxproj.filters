@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="源文件\shader">
+      <UniqueIdentifier>{8f411fc8-75d6-424e-b377-d0da2b7611fb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\includes\glad\glad.h">
@@ -27,6 +30,9 @@
     <ClInclude Include="..\includes\KHR\khrplatform.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="shader.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -35,5 +41,13 @@
     <ClCompile Include="..\src\glad.c">
       <Filter>源文件</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\shader\shader.frag">
+      <Filter>源文件\shader</Filter>
+    </None>
+    <None Include="..\shader\shader.vert">
+      <Filter>源文件\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
