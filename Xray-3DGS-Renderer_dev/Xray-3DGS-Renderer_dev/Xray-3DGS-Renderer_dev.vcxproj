@@ -132,11 +132,13 @@
     <ClInclude Include="..\includes\GLFW\glfw3.h" />
     <ClInclude Include="..\includes\GLFW\glfw3native.h" />
     <ClInclude Include="..\includes\KHR\khrplatform.h" />
-    <ClInclude Include="shader.h" />
+    <ClInclude Include="..\includes\stb_image.h" />
+    <ClInclude Include="..\src\shader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\glad.c" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shader\shader.frag" />

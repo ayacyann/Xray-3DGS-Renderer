@@ -1,5 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <stb_image.h>
 
 #include "shader.h"
 
@@ -7,6 +8,7 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+unsigned int loadTexture(const char* path);
 
 // 窗口宽高设置
 // -----------
@@ -46,26 +48,40 @@ int main()
     // -------------------------------
     float vertices[] = 
     {
-        // 位置              // 颜色
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
-        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
-         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
+        //---- 位置 ----       ---- 颜色 ----     - 纹理坐标 -
+        0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // 右上
+        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // 右下
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
     };
 
-    unsigned int VBO, VAO;
+    unsigned int indices[] = 
+    {
+        0, 1, 3, // 第一个三角形
+        1, 2, 3  // 第二个三角形
+    };
+
+    unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    // 首先绑定顶点数组对象，然后绑定并设置顶点缓冲区，最后配置顶点属性
+    glGenBuffers(1, &EBO);
+    // 首先绑定顶点数组对象，然后绑定并设置顶点缓冲区，索引缓冲区，最后配置顶点属性
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -75,7 +91,19 @@ int main()
     glBindVertexArray(0);
 
 
-    Shader ourShader("../shader/shader.vert", "../shader/shader.frag");
+    // 纹理
+    // --
+    stbi_set_flip_vertically_on_load(true);//垂直方向翻转纹理
+    unsigned int texture1 = loadTexture("../resources/texture/container.jpg");
+    unsigned int texture2 = loadTexture("../resources/texture/awesomeface.png");
+
+
+    // 创建shader程序
+    // ---------------
+    Shader Shader1("../shader/shader.vert", "../shader/shader.frag");
+    Shader1.use();
+    Shader1.setInt("texture1", 0);
+    Shader1.setInt("texture2", 1);
 
     // 渲染循环
     // -------
@@ -90,13 +118,14 @@ int main()
         // ----
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        // 绘制三角形
-        ourShader.use();
-        ourShader.setFloat("someUniform", 1.0f);
-
+        // 绘制
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        
 
         // glfw 交换颜色缓充，检查触发事件，更新窗口状态，并调用对应的回调函数
         // ------------------------------------------------------------
@@ -104,9 +133,10 @@ int main()
         glfwPollEvents();
     }
 
-    // 释放VAO，VBO，shader
+    // 释放VAO，VBO，EBO
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 
     // glfw 释放之前的分配的所有资源
     // ----------------------
@@ -127,4 +157,53 @@ void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+}
+
+// 加载贴图
+// -------
+unsigned int loadTexture(const char* path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format = 1;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        GLenum mode = 1;
+        if (format == GL_RGBA)
+        {
+            mode = GL_CLAMP_TO_EDGE;
+        }
+        else
+        {
+            mode = GL_REPEAT;
+        }
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mode);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mode);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
 }

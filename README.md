@@ -3,4 +3,5 @@
 
 glfw
 glad
+stb_image
 
