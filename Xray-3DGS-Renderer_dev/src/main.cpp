@@ -2,6 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "shader.h"
 
 #include <iostream>
@@ -44,7 +48,7 @@ int main()
         return -1;
     }
 
-    // 设置顶点数据和缓冲区，配置顶点属性
+    // 设置顶点数据和缓冲区，索引缓冲区，配置顶点属性
     // -------------------------------
     float vertices[] = 
     {
@@ -91,19 +95,28 @@ int main()
     glBindVertexArray(0);
 
 
+    // 创建shader程序
+    // ---------------
+    Shader Shader1("../shader/shader.vert", "../shader/shader.frag");
+    Shader1.use();
+
+
     // 纹理
     // --
     stbi_set_flip_vertically_on_load(true);//垂直方向翻转纹理
     unsigned int texture1 = loadTexture("../resources/texture/container.jpg");
     unsigned int texture2 = loadTexture("../resources/texture/awesomeface.png");
-
-
-    // 创建shader程序
-    // ---------------
-    Shader Shader1("../shader/shader.vert", "../shader/shader.frag");
-    Shader1.use();
     Shader1.setInt("texture1", 0);
     Shader1.setInt("texture2", 1);
+
+
+    // 变换
+    // ---
+    glm::mat4 trans = glm::mat4(1.0f);
+    //trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+    //trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+    trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+
 
     // 渲染循环
     // -------
@@ -123,6 +136,10 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
+
+        trans = glm::rotate(trans, glm::radians((float)glfwGetTime()/10), glm::vec3(0.0f, 0.0f, 1.0f));
+        Shader1.setMat4("transform", trans);
+
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         

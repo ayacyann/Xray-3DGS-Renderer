@@ -2,6 +2,8 @@
 
 #include <glad/glad.h>; // 包含glad来获取所有的必须OpenGL头文件
 
+#include <glm/glm.hpp>
+
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -15,16 +17,28 @@ public:
     unsigned int ID;
 
     // 构造器读取并构建着色器
-    Shader(const char* vertexPath, const char* fragmentPath)
+    Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr,
+           const char* tessControlPath = nullptr, const char* tessEvalPath = nullptr)
     {
         // 1. 从文件路径中获取顶点/片段着色器
         std::string vertexCode;
         std::string fragmentCode;
+        std::string geometryCode;
+        std::string tessControlCode;
+        std::string tessEvalCode;
         std::ifstream vShaderFile;
         std::ifstream fShaderFile;
+        std::ifstream gShaderFile;
+        std::ifstream tcShaderFile;
+        std::ifstream teShaderFile;
+
         // 保证ifstream对象可以抛出异常：
         vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        gShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        tcShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        teShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
         try
         {
             // 打开文件
@@ -40,10 +54,33 @@ public:
             // 转换数据流到string
             vertexCode = vShaderStream.str();
             fragmentCode = fShaderStream.str();
+
+            if (geometryPath != nullptr)
+            {
+                gShaderFile.open(geometryPath);
+                std::stringstream gShaderStream;
+                gShaderStream << gShaderFile.rdbuf();
+                gShaderFile.close();
+                geometryCode = gShaderStream.str();
+            }
+            if (tessControlPath != nullptr) {
+                tcShaderFile.open(tessControlPath);
+                std::stringstream tcShaderStream;
+                tcShaderStream << tcShaderFile.rdbuf();
+                tcShaderFile.close();
+                tessControlCode = tcShaderStream.str();
+            }
+            if (tessEvalPath != nullptr) {
+                teShaderFile.open(tessEvalPath);
+                std::stringstream teShaderStream;
+                teShaderStream << teShaderFile.rdbuf();
+                teShaderFile.close();
+                tessEvalCode = teShaderStream.str();
+            }
         }
         catch (std::ifstream::failure e)
         {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
         }
         const char* vShaderCode = vertexCode.c_str();
         const char* fShaderCode = fragmentCode.c_str();
@@ -65,10 +102,47 @@ public:
         // 打印编译错误（如果有的话）
         checkCompileErrors(fragment, "FRAGMENT");
 
+        // 几何着色器
+        unsigned int geometry;
+        if (geometryPath != nullptr)
+        {
+            const char* gShaderCode = geometryCode.c_str();
+            geometry = glCreateShader(GL_GEOMETRY_SHADER);
+            glShaderSource(geometry, 1, &gShaderCode, NULL);
+            glCompileShader(geometry);
+            checkCompileErrors(geometry, "GEOMETRY");
+        }
+
+        // tc/te
+        unsigned int tessControl;
+        if (tessControlPath != nullptr)
+        {
+            const char* tcShaderCode = tessControlCode.c_str();
+            tessControl = glCreateShader(GL_TESS_CONTROL_SHADER);
+            glShaderSource(tessControl, 1, &tcShaderCode, NULL);
+            glCompileShader(tessControl);
+            checkCompileErrors(tessControl, "TESS_CONTROL");
+        }
+        unsigned int tessEval;
+        if (tessEvalPath != nullptr)
+        {
+            const char* teShaderCode = tessEvalCode.c_str();
+            tessEval = glCreateShader(GL_TESS_EVALUATION_SHADER);
+            glShaderSource(tessEval, 1, &teShaderCode, NULL);
+            glCompileShader(tessEval);
+            checkCompileErrors(tessEval, "TESS_EVALUATION");
+        }
+
         // 着色器程序
         ID = glCreateProgram();
         glAttachShader(ID, vertex);
         glAttachShader(ID, fragment);
+        if (geometryPath != nullptr)
+            glAttachShader(ID, geometry);
+        if (tessControlPath != nullptr)
+            glAttachShader(ID, tessControl);
+        if (tessEvalPath != nullptr)
+            glAttachShader(ID, tessEval);
         glLinkProgram(ID);
         // 打印连接错误（如果有的话）
         checkCompileErrors(ID, "PROGRAM");
@@ -76,6 +150,8 @@ public:
         // 删除着色器，它们已经链接到我们的程序中了，已经不再需要了
         glDeleteShader(vertex);
         glDeleteShader(fragment);
+        if (geometryPath != nullptr)
+            glDeleteShader(geometry);
     }
     // 使用/激活程序
     void use()
@@ -87,13 +163,57 @@ public:
     {
         glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
     }
+    // ------------------------------------------------------------------------
     void setInt(const std::string& name, int value) const
     {
         glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
     }
+    // ------------------------------------------------------------------------
     void setFloat(const std::string& name, float value) const
     {
         glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+    }
+    // ------------------------------------------------------------------------
+    void setVec2(const std::string& name, const glm::vec2 &value) const
+    {
+        glUniform2fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+    }
+    void setVec2(const std::string& name, float x, float y) const
+    {
+        glUniform2f(glGetUniformLocation(ID, name.c_str()), x, y);
+    }
+    // ------------------------------------------------------------------------
+    void setVec3(const std::string& name, const glm::vec3 &value) const
+    {
+        glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+    }
+    void setVec3(const std::string& name, float x, float y, float z) const
+    {
+        glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
+    }
+    // ------------------------------------------------------------------------
+    void setVec4(const std::string& name, const glm::vec4 &value) const
+    {
+        glUniform4fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+    }
+    void setVec4(const std::string& name, float x, float y, float z, float w) const
+    {
+        glUniform4f(glGetUniformLocation(ID, name.c_str()), x, y, z, w);
+    }
+    // ------------------------------------------------------------------------
+    void setMat2(const std::string& name, const glm::mat2 &mat) const
+    {
+        glUniformMatrix2fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    }
+    // ------------------------------------------------------------------------
+    void setMat3(const std::string& name, const glm::mat3 &mat) const
+    {
+        glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    }
+    // ------------------------------------------------------------------------
+    void setMat4(const std::string& name, const glm::mat4 &mat) const
+    {
+        glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
 
 private:
