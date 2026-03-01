@@ -16,6 +16,9 @@
     <Filter Include="资源文件\shader">
       <UniqueIdentifier>{8f411fc8-75d6-424e-b377-d0da2b7611fb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\ownplymodel">
+      <UniqueIdentifier>{d18ea973-0354-45f2-9983-6dcc8822a8cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\camera.h">
@@ -29,6 +32,15 @@
     </ClInclude>
     <ClInclude Include="..\src\shader.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ownplymodel.h">
+      <Filter>头文件\ownplymodel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\plyformat_parser.h">
+      <Filter>头文件\ownplymodel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\plyexporter.h">
+      <Filter>头文件\ownplymodel</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

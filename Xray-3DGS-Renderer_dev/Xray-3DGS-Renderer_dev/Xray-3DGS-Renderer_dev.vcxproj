@@ -129,8 +129,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\src\camera.h" />
+    <ClInclude Include="..\src\plyexporter.h" />
+    <ClInclude Include="..\src\plyformat_parser.h" />
     <ClInclude Include="..\src\mesh.h" />
     <ClInclude Include="..\src\model.h" />
+    <ClInclude Include="..\src\ownplymodel.h" />
     <ClInclude Include="..\src\shader.h" />
   </ItemGroup>
   <ItemGroup>

@@ -8,6 +8,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
+#include "ownplymodel.h"
 
 #include <iostream>
 
@@ -52,7 +53,7 @@ int main()
     glfwSetCursorPosCallback(window, mouse_callback);// 鼠标移动回调
     glfwSetScrollCallback(window, scroll_callback);// 鼠标滚轮回调
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);// 鼠标停留在窗口中
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);// 鼠标停留在窗口中
 
     // glad加载OpenGL的函数指针
     // ----------------------
@@ -76,7 +77,8 @@ int main()
 
     // 加载模型
     // ----------------
-    Model ourModel("../resources/model/nanosuit/nanosuit.obj");
+    Model ourModel("../resources/model/.ply/cube_binary.ply");
+    Ownplymodel ourModel2("../resources/model/.ply/point_cloud.ply");
 
 
     // 渲染循环
@@ -95,7 +97,7 @@ int main()
 
         // 渲染
         // ----
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // 绘制
         
@@ -115,6 +117,7 @@ int main()
         Shader1.setMat4("projection", projection);
      
         ourModel.Draw(Shader1);
+        ourModel2.Draw(Shader1);
 
         // glfw 交换颜色缓充，检查触发事件，更新窗口状态，并调用对应的回调函数
         // ------------------------------------------------------------
@@ -184,53 +187,4 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
-}
-
-// 加载贴图
-// -------
-unsigned int loadTexture(const char* path)
-{
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, nrComponents;
-    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format = 1;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        GLenum mode = 1;
-        if (format == GL_RGBA)
-        {
-            mode = GL_CLAMP_TO_EDGE;
-        }
-        else
-        {
-            mode = GL_REPEAT;
-        }
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, mode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, mode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-    }
-
-    return textureID;
 }
