@@ -99,7 +99,7 @@ private:
 
         // 绑定VBO并传入数据
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Ply_Vertex), vertices.data(), GL_STATIC_DRAW);
 
         // 配置顶点属性（位置属性，索引0，3个float，步长15*sizeof(float)）
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 15 * sizeof(float), (void*)0);
