@@ -13,8 +13,10 @@ class Ownplymodel
 {
 public:
     string loadpath;  
-    bool gammaCorrection;
-    Ownplymodel(string const& path, bool gamma = false) : loadpath(path), gammaCorrection(gamma)
+    bool gamma_correction;
+    unsigned int VAO;
+    int vertex_count;
+    Ownplymodel(string const& path, bool gamma = false) : loadpath(path), gamma_correction(gamma)
     {
         int success = loadModel(path);
         if (success)
@@ -28,7 +30,9 @@ public:
     }
     void Draw(Shader& shader)
     {
-        
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_POINTS, 0, vertex_count);
+        glBindVertexArray(0);
     }
 private:
     int loadModel(string const& path)
@@ -36,8 +40,17 @@ private:
         Plyformat_parser parser(path);
         if (!parser.success)
         {
+            cout << "parser解析header错误" << endl;
+
             return 0;
         }
         Plyexporter exporter(path);
+        this->VAO = exporter.VAO;
+        this->vertex_count = exporter.vertex_count;
+        if (!exporter.success)
+        {
+            cout << "exporter导出顶点数据错误" << endl;
+            return 0;
+        }
     }
 };

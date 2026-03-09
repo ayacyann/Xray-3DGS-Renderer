@@ -172,7 +172,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
-// 按下esc关闭窗口
+// 键盘输入
 // --------------
 void processInput(GLFWwindow* window)
 {
