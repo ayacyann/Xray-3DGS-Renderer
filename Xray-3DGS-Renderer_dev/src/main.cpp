@@ -15,7 +15,9 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window);
+void process_input(GLFWwindow* window);
+bool ifmouse = 0;
+bool key_pressed[GLFW_KEY_LAST] = { false };
 
 // 窗口宽高设置
 // -----------
@@ -53,7 +55,7 @@ int main()
     glfwSetCursorPosCallback(window, mouse_callback);// 鼠标移动回调
     glfwSetScrollCallback(window, scroll_callback);// 鼠标滚轮回调
 
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);// 鼠标停留在窗口中
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);// 鼠标停留在窗口中
 
     // glad加载OpenGL的函数指针
     // ----------------------
@@ -69,6 +71,7 @@ int main()
 
     // 深度测试
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_PROGRAM_POINT_SIZE);
 
 
     // 创建shader程序
@@ -92,7 +95,7 @@ int main()
 
         // 输入检测
         // -------
-        processInput(window);
+        process_input(window);
 
 
         // 渲染
@@ -143,8 +146,18 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // --------------
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
+    float xpos = 0;
+    float ypos = 0;
+
+    if (!ifmouse)
+    {
+        xpos = static_cast<float>(xposIn);
+        ypos = static_cast<float>(yposIn);
+    }
+    else
+    {
+        return;
+    }
 
     if (firstMouse)
     {
@@ -174,10 +187,30 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 // 键盘输入
 // --------------
-void processInput(GLFWwindow* window)
+void process_input(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !key_pressed[GLFW_KEY_TAB])
+    {
+        key_pressed[GLFW_KEY_TAB] = true;
+        ifmouse = !ifmouse;
+        if (ifmouse)
+        {
+            firstMouse = true;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // 鼠标
+        }
+        else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // 鼠标停留在窗口中                                     
+        }
+    }
+    else if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE)
+    {
+        key_pressed[GLFW_KEY_TAB] = false;
+    }
+
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
