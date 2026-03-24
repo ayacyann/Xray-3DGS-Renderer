@@ -26,6 +26,8 @@ const unsigned int SCR_HEIGHT = 600;
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
+float oriMovementSpeed = 3.0f;
+float accMovementSpeed = 5.0;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCR_WIDTH / 2.0f;
@@ -34,6 +36,7 @@ bool firstMouse = true;
 
 int main()
 {
+	camera.MovementSpeed = oriMovementSpeed;
     // glfw初始化配置
     // -------------
     glfwInit();
@@ -69,20 +72,20 @@ int main()
     // --
     stbi_set_flip_vertically_on_load(true);//垂直方向翻转纹理
 
-    // 深度测试
-    glEnable(GL_DEPTH_TEST);
+    // 不需要深度测试
+    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
     glEnable(GL_PROGRAM_POINT_SIZE);
 
 
     // 创建shader程序
     // ---------------
-    Shader Shader1("../shader/shader.vert", "../shader/shader.frag");
+    Shader Shader("../shader/shader.vert", "../shader/shader.frag");
 
     // 加载模型
     // ----------------
-    Model ourModel("../resources/model/.ply/cube_binary.ply");
-    Ownplymodel ourModel2("../resources/model/.ply/point_cloud.ply");
-
+    Ownplymodel ourModel("../resources/model/.ply/aneurism.ply");
 
     // 渲染循环
     // -------
@@ -106,21 +109,15 @@ int main()
         
 
         // 坐标系统
-        Shader1.use();
+        Shader.use();
 
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down        
-        Shader1.setMat4("model", model);
-
         glm::mat4 view = camera.GetViewMatrix();
-        Shader1.setMat4("view", view);
-
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        Shader1.setMat4("projection", projection);
+        Shader.setMat4("MVP", projection * view * model);
+        Shader.setVec3("cameraPos", camera.Position);
      
-        ourModel.Draw(Shader1);
-        ourModel2.Draw(Shader1);
+        ourModel.Draw(Shader);
 
         // glfw 交换颜色缓充，检查触发事件，更新窗口状态，并调用对应的回调函数
         // ------------------------------------------------------------
@@ -171,7 +168,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    float sensitivity = 0.05f;
+    float sensitivity = 0.1f;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
@@ -220,4 +217,12 @@ void process_input(GLFWwindow* window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera.ProcessKeyboard(DOWN, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        camera.ProcessKeyboard(UP, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		camera.MovementSpeed = accMovementSpeed;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
+        camera.MovementSpeed = oriMovementSpeed;
 }
