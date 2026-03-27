@@ -19,7 +19,7 @@ struct Ply_Vertex {
     // density
     glm::vec1 Density;
     // mark
-    glm::vec1 Mark;
+    //glm::vec1 Mark;
     // scale
     glm::vec3 Scale;
     // rot
@@ -147,9 +147,9 @@ private:
         glEnableVertexAttribArray(3);
         glVertexAttribDivisor(3, 1);
         // 配置顶点属性（初始化点云蒙版属性，索引3，1个float，步长15*sizeof(float)）
-        glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Ply_Vertex), (void*)(offsetof(Ply_Vertex, Mark)));
-        glEnableVertexAttribArray(4);
-        glVertexAttribDivisor(4, 1);
+        //glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Ply_Vertex), (void*)(offsetof(Ply_Vertex, Mark)));
+        //glEnableVertexAttribArray(4);
+        //glVertexAttribDivisor(4, 1);
         // 配置顶点属性（缩放属性，索引4，3个float，步长15*sizeof(float)）
         glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Ply_Vertex), (void*)(offsetof(Ply_Vertex, Scale)));
         glEnableVertexAttribArray(5);

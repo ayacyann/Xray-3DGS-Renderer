@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include <cmath>
 #include <vector>
 
 enum Camera_Movement {
@@ -54,6 +54,23 @@ public:
 		Pitch = pitch;
 		updateCameraVectors();
 	}
+	// TODO: 通过相机参数构造相机，当前函数仍有bug，后续需要进行调整更改
+	Camera(float angle, float DSO, float sDetector, float DSD, float nVoxel, float dVoxel)
+	{
+		float scale = 2 / (nVoxel / dVoxel / 1000);
+		glm::mat4 c2w = angle2pose(DSO * scale, glm::radians(angle));
+		glm::mat4 w2c = glm::inverse(c2w);
+		glm::mat3 R = glm::mat3(w2c);
+		Position = glm::vec3(w2c[3]);
+
+		Pitch = glm::degrees(asin(Front.y));
+		Yaw = glm::degrees(atan2(Front.z, Front.x));
+
+		WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+		updateCameraVectors();
+
+		Zoom = glm::degrees(2.0f * atan2f(sDetector / 2.0f, DSD));
+	}
 
 	glm::mat4 GetViewMatrix()
 	{	
@@ -75,6 +92,33 @@ public:
 			Position.y += velocity;
 		if (direction == DOWN)
 			Position.y -= velocity;
+	}
+
+	glm::mat4 angle2pose(float DSO, float angle)
+	{
+		float phi1 = -glm::pi<float>() / 2.0f;
+		float phi2 = glm::pi<float>() / 2.0f;
+		float angle_rad = glm::radians(angle);
+
+		// ===== 构造旋转矩阵 =====
+		glm::mat4 R1 = glm::rotate(glm::mat4(1.0f), phi1, glm::vec3(1, 0, 0));
+		glm::mat4 R2 = glm::rotate(glm::mat4(1.0f), angle_rad, glm::vec3(0, 1, 0));
+		glm::mat4 R3 = glm::rotate(glm::mat4(1.0f), phi2, glm::vec3(0, 0, 1));
+
+		glm::mat4 R = R3 * R2 * R1;
+
+		// ===== 平移 =====
+		glm::vec3 t(
+			DSO * std::cos(angle_rad),
+			0.0f,
+			DSO * std::sin(angle_rad)
+		);
+
+		// ===== 组合成 transform =====
+		glm::mat4 transform = R;
+		transform[3] = glm::vec4(t.x, t.y, t.z, 1.0f);
+
+		return transform;
 	}
 
 	void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)

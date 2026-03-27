@@ -4,15 +4,16 @@ out vec4 FragColor;
 
 uniform mat4 MVP;
 uniform vec3 cameraPos;
+uniform float exposure;
 
 in float density;
-in float mark;
+//in float mark;
 in vec3 scale;
 in mat3 rotation;
 in vec3 worldPos;
 in vec3 center;
 
-vec3 closestEllipsoidIntersection(vec3 rayDirection, out vec3 normal) {
+vec3 closestEllipsoidIntersection(vec3 rayDirection) {
   // Convert ray to ellipsoid space
   vec3 localRayOrigin = (cameraPos - center) * rotation;
   vec3 localRayDirection = normalize(rayDirection * rotation);
@@ -41,12 +42,6 @@ vec3 closestEllipsoidIntersection(vec3 rayDirection, out vec3 normal) {
   
   // Compute intersection point in ellipsoid space
   vec3 localIntersection = vec3(localRayOrigin + t * localRayDirection);
-
-  // Compute normal vector in ellipsoid space
-  vec3 localNormal = normalize(localIntersection / scale);
-  
-  // Convert normal vector to world space
-  normal = normalize(rotation * localNormal);
   
   // Convert intersection point back to world space
   vec3 intersection = rotation * localIntersection + center;
@@ -72,6 +67,12 @@ void projectGaussian3DTo2D(
     float w = ph.w;
     center2D = ph.xy / w;
 
+    Sigma2D = mat2(
+        Sigma3D[0][0], Sigma3D[0][1],
+        Sigma3D[1][0], Sigma3D[1][1]
+    );
+
+    /*
     // --- 3. 计算雅可比矩阵 J ---
     // MVP元素
     float m11 = MVP[0][0], m12 = MVP[0][1], m13 = MVP[0][2], m14 = MVP[0][3];
@@ -96,6 +97,7 @@ void projectGaussian3DTo2D(
     Sigma2D[0][1] = dot(J[0], Sigma3D * J[1]);
     Sigma2D[1][0] = dot(J[1], Sigma3D * J[0]);
     Sigma2D[1][1] = dot(J[1], Sigma3D * J[1]);
+    */
 }
 
 float det2(mat2 M) {
@@ -117,8 +119,7 @@ void main()
     projectGaussian3DTo2D(center2D,Sigma2D,Sigma3D);
 
 	vec3 dir = normalize(worldPos - cameraPos);
-	vec3 normal;
-	vec3 intersection = closestEllipsoidIntersection(dir, normal);
+	vec3 intersection = closestEllipsoidIntersection(dir);
 	
 	if(length(intersection) < 1e-6)
 		discard;
@@ -126,7 +127,7 @@ void main()
 	vec4 newPos = MVP * vec4(intersection, 1);
 	newPos /= newPos.w;
     vec2 d = newPos.xy - center2D;
-    float exponent = -0.5 * (d.x * (Sigma2D[0][0]*d.x + Sigma2D[0][1]*d.y) + d.y * (Sigma2D[1][0]*d.x + Sigma2D[1][1]*d.y));
+    float exponent = -0.5 * (dot(d, Sigma2D * d));
 	float align = sqrt(2 * 3.14159265 * det3(Sigma3D) / (det2(Sigma2D) + 1e-12)) * exp(exponent);
-	FragColor = vec4(vec3(align * density), 1.0);
+	FragColor = vec4(vec3(align * density * exposure), 1.0);
 }

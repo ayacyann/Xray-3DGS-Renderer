@@ -4,12 +4,12 @@ layout (location = 0) in vec3 aCubePos;
 layout (location = 1) in vec3 aCenter;
 layout (location = 2) in vec3 aNormal;
 layout (location = 3) in float aDensity;
-layout (location = 4) in float aMark;
+//layout (location = 4) in float aMark;
 layout (location = 5) in vec3 aScale;
 layout (location = 6) in vec4 aRot;
 
 out float density;
-out float mark;
+//out float mark;
 out vec3 scale;
 out mat3 rotation;
 out vec3 worldPos;
@@ -46,9 +46,9 @@ float softplus(float x) {
 
 void main()
 {
-    mark = aMark;
+    //mark = aMark;
     density = softplus(aDensity);
-    scale = exp(aScale);
+    scale = exp(aScale).xzy;
     rotation = transpose(quatToMat3(aRot));
     center = aCenter.xzy;
     worldPos = rotation * scale * aCubePos + center;
