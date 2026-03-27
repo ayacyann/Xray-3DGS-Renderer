@@ -19,6 +19,9 @@
     <Filter Include="头文件\ownplymodel">
       <UniqueIdentifier>{d18ea973-0354-45f2-9983-6dcc8822a8cb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\imgui">
+      <UniqueIdentifier>{58195650-68f6-4de4-85e7-d8e5e12cf5c1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\camera.h">
@@ -49,6 +52,27 @@
     </ClCompile>
     <ClCompile Include="..\src\glad.c">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_demo.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_draw.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_tables.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_widgets.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui-1.92.6-docking\backends\imgui_impl_glfw.cpp">
+      <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\imgui-1.92.6-docking\backends\imgui_impl_opengl3.cpp">
+      <Filter>源文件\imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

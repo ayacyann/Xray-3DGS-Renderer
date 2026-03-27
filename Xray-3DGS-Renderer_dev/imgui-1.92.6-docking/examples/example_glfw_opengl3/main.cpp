@@ -1,96 +1,84 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+// Dear ImGui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
+// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+// Learn about Dear ImGui:
+// - FAQ                  https://dearimgui.com/faq
+// - Getting Started      https://dearimgui.com/getting-started
+// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
+// - Introduction, links and more at the top of imgui.cpp
 
-// imgui---------------------------------------
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-// imgui---------------------------------------
+#include <stdio.h>
+#define GL_SILENCE_DEPRECATION
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+#include <GLES2/gl2.h>
+#endif
+#include <GLFW/glfw3.h> // Will drag system OpenGL headers
 
-#include "shader.h"
-#include "camera.h"
-#include "model.h"
-#include "ownplymodel.h"
+// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
+// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
+// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
+#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
+#pragma comment(lib, "legacy_stdio_definitions")
+#endif
 
-#include <iostream>
+// This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
+#ifdef __EMSCRIPTEN__
+#include "../libs/emscripten/emscripten_mainloop_stub.h"
+#endif
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void process_input(GLFWwindow* window);
-
-// 窗口宽高设置
-// -----------
-const unsigned int SCR_WIDTH = 512;
-const unsigned int SCR_HEIGHT = 512;
-
-float deltaTime = 0.0f; // 当前帧与上一帧的时间差
-float lastFrame = 0.0f; // 上一帧的时间
-float oriMovementSpeed = 3.0f;
-float accMovementSpeed = 5.0f;
-
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-//Camera camera(0.0f, 1.0f, 0.001f, 1.5f, 256, 1);
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-float exposure = 2.0f;
-bool firstMouse = true;
-bool ifmouse = 0;
-bool key_pressed[GLFW_KEY_LAST] = { false };
-
-int main()
+static void glfw_error_callback(int error, const char* description)
 {
-    // glfw初始化配置
-    // -------------
-    glfwInit();
-    const char* glsl_version = "#version 330";
+    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
+// Main code
+int main(int, char**)
+{
+    glfwSetErrorCallback(glfw_error_callback);
+    if (!glfwInit())
+        return 1;
+
+    // Decide GL+GLSL versions
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+    // GL ES 2.0 + GLSL 100 (WebGL 1.0)
+    const char* glsl_version = "#version 100";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#elif defined(IMGUI_IMPL_OPENGL_ES3)
+    // GL ES 3.0 + GLSL 300 es (WebGL 2.0)
+    const char* glsl_version = "#version 300 es";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-    // glfw创建窗口
-    // -----------
-    // 获取主显示器
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-    // 获取显示器分辨率
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    // 计算居中坐标（核心）
-    glfwWindowHint(GLFW_POSITION_X, (mode->width - SCR_WIDTH) / 2);
-    glfwWindowHint(GLFW_POSITION_Y, (mode->height - SCR_HEIGHT) / 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#elif defined(__APPLE__)
+    // GL 3.2 + GLSL 150
+    const char* glsl_version = "#version 150";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+#else
+    // GL 3.0 + GLSL 130
+    const char* glsl_version = "#version 130";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+#endif
+
+    // Create window with graphics context
     float main_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor()); // Valid on GLFW 3.3+ only
-    GLFWwindow* window = glfwCreateWindow((int)(SCR_WIDTH * main_scale), (int)(SCR_HEIGHT * main_scale), "Xray-3DGS-Renderer", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
+    GLFWwindow* window = glfwCreateWindow((int)(1280 * main_scale), (int)(800 * main_scale), "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
+    if (window == nullptr)
+        return 1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);// 调整窗口大小回调
-    glfwSetCursorPosCallback(window, mouse_callback);// 鼠标移动回调
-    glfwSetScrollCallback(window, scroll_callback);// 鼠标滚轮回调
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);// 鼠标停留在窗口中
-
-    // glad加载OpenGL的函数指针
-    // ----------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-   
-
-
-
-
-    // imgui---------------------------------------
-     // Setup Dear ImGui context
+    // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -151,77 +139,23 @@ int main()
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    // imgui---------------------------------------
 
-
-
-
-
-    // 纹理
-    // --
-    stbi_set_flip_vertically_on_load(true);//垂直方向翻转纹理
-
-    // 不需要深度测试
-    //glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-    glEnable(GL_PROGRAM_POINT_SIZE);
-
-
-    // 创建shader程序
-    // ---------------
-    Shader Shader("../shader/shader.vert", "../shader/shader.frag");
-
-    // 加载模型
-    // ----------------
-    Ownplymodel ourModel("../resources/model/.ply/Lingo/foot.ply");
-
-    // 渲染循环
-    // -------
+    // Main loop
+#ifdef __EMSCRIPTEN__
+    // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
+    // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
+    io.IniFilename = nullptr;
+    EMSCRIPTEN_MAINLOOP_BEGIN
+#else
     while (!glfwWindowShouldClose(window))
+#endif
     {
-        // 帧时间差
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        // 输入检测
-        // -------
-        process_input(window);
-
-
-        // 渲染
-        // ----
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // 绘制
-        
-
-        // 坐标系统
-        Shader.use();
-
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        Shader.setMat4("MVP", projection * view * model);
-        Shader.setVec3("cameraPos", camera.Position);
-		Shader.setFloat("exposure", exposure);
-     
-        ourModel.Draw(Shader);
-
-        // glfw 检查触发事件，更新窗口状态，并调用对应的回调函数
-        // ------------------------------------------------------------
-        glfwPollEvents();
-
-
-
-
-        // imgui---------------------------------------
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+        glfwPollEvents();
         if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
         {
             ImGui_ImplGlfw_Sleep(10);
@@ -275,8 +209,8 @@ int main()
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        //glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-        //glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Update and Render additional Platform Windows
@@ -289,124 +223,20 @@ int main()
             ImGui::RenderPlatformWindowsDefault();
             glfwMakeContextCurrent(backup_current_context);
         }
-        // imgui---------------------------------------
 
-
-
-
-        // glfw 交换颜色缓充
         glfwSwapBuffers(window);
     }
+#ifdef __EMSCRIPTEN__
+    EMSCRIPTEN_MAINLOOP_END;
+#endif
 
-
-    // imgui Cleanup
+    // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-
-    // glfw 释放之前的分配的所有资源
-    // ----------------------
     glfwDestroyWindow(window);
     glfwTerminate();
+
     return 0;
-}
-
-// 调整窗口大小回调函数
-// --------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
-
-// 鼠标移动回调
-// --------------
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-    float xpos = 0;
-    float ypos = 0;
-
-    if (!ifmouse)
-    {
-        xpos = static_cast<float>(xposIn);
-        ypos = static_cast<float>(yposIn);
-    }
-    else
-    {
-        return;
-    }
-
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; 
-    lastX = xpos;
-    lastY = ypos;
-
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-// 鼠标滚轮回调
-// --------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    //camera.ProcessMouseScroll(static_cast<float>(yoffset));
-	if (yoffset > 0)
-		exposure += 0.25f;
-	else
-		exposure -= 0.25f;
-}
-
-// 键盘输入
-// --------------
-void process_input(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !key_pressed[GLFW_KEY_TAB])
-    {
-        key_pressed[GLFW_KEY_TAB] = true;
-        ifmouse = !ifmouse;
-        if (ifmouse)
-        {
-            firstMouse = true;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // 鼠标
-        }
-        else
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // 鼠标停留在窗口中                                     
-        }
-    }
-    else if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE)
-    {
-        key_pressed[GLFW_KEY_TAB] = false;
-    }
-
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        camera.ProcessKeyboard(DOWN, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        camera.ProcessKeyboard(UP, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		camera.MovementSpeed = accMovementSpeed;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
-        camera.MovementSpeed = oriMovementSpeed;
 }
