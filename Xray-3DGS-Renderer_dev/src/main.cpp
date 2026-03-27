@@ -9,6 +9,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_own_render_code.h"
 // imgui---------------------------------------
 
 #include "shader.h"
@@ -25,8 +26,8 @@ void process_input(GLFWwindow* window);
 
 // 窗口宽高设置
 // -----------
-const unsigned int SCR_WIDTH = 512;
-const unsigned int SCR_HEIGHT = 512;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
@@ -86,7 +87,8 @@ int main()
     }
    
 
-
+    // imgui_own_render_code帧缓冲
+    imgui_own_render_code::create_framebuffer();
 
 
     // imgui---------------------------------------
@@ -192,6 +194,7 @@ int main()
 
         // 渲染
         // ----
+        //glBindFramebuffer(GL_FRAMEBUFFER, imgui_own_render_code::fbo);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // 绘制
@@ -265,10 +268,21 @@ int main()
         {
             ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
             ImGui::Text("Hello from another window!");
+            glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+            glClear(GL_COLOR_BUFFER_BIT);
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
             ImGui::End();
         }
+
+
+
+        // imgui own render code ----------------------------------
+        imgui_own_render_code::render_ui();
+        // imgui own render code ----------------------------------
+
+
+
 
         // Rendering
         ImGui::Render();

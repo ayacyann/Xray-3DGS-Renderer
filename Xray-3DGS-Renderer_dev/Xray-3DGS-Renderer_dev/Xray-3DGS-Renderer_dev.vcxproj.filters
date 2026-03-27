@@ -45,6 +45,9 @@
     <ClInclude Include="..\src\plyexporter.h">
       <Filter>头文件\ownplymodel</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\imgui_own_render_code.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -73,6 +76,9 @@
     </ClCompile>
     <ClCompile Include="..\imgui-1.92.6-docking\backends\imgui_impl_opengl3.cpp">
       <Filter>源文件\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\imgui_own_render_code.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

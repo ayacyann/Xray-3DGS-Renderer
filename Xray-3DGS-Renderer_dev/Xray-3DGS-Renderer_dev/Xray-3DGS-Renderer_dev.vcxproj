@@ -131,6 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\src\camera.h" />
+    <ClInclude Include="..\src\imgui_own_render_code.h" />
     <ClInclude Include="..\src\plyexporter.h" />
     <ClInclude Include="..\src\plyformat_parser.h" />
     <ClInclude Include="..\src\mesh.h" />
@@ -147,6 +148,7 @@
     <ClCompile Include="..\imgui-1.92.6-docking\imgui_tables.cpp" />
     <ClCompile Include="..\imgui-1.92.6-docking\imgui_widgets.cpp" />
     <ClCompile Include="..\src\glad.c" />
+    <ClCompile Include="..\src\imgui_own_render_code.cpp" />
     <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
