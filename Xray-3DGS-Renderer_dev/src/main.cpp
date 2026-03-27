@@ -16,8 +16,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void process_input(GLFWwindow* window);
-bool ifmouse = 0;
-bool key_pressed[GLFW_KEY_LAST] = { false };
 
 // 窗口宽高设置
 // -----------
@@ -27,7 +25,7 @@ const unsigned int SCR_HEIGHT = 512;
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
 float lastFrame = 0.0f; // 上一帧的时间
 float oriMovementSpeed = 3.0f;
-float accMovementSpeed = 5.0;
+float accMovementSpeed = 5.0f;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 //Camera camera(0.0f, 1.0f, 0.001f, 1.5f, 256, 1);
@@ -35,10 +33,11 @@ float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 float exposure = 2.0f;
 bool firstMouse = true;
+bool ifmouse = 0;
+bool key_pressed[GLFW_KEY_LAST] = { false };
 
 int main()
 {
-	camera.MovementSpeed = oriMovementSpeed;
     // glfw初始化配置
     // -------------
     glfwInit();

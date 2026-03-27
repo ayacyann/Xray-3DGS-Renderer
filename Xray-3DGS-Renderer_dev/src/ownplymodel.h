@@ -52,5 +52,7 @@ private:
             cout << "exporter导出顶点数据错误" << endl;
             return 0;
         }
+
+        return 1;
     }
 };
