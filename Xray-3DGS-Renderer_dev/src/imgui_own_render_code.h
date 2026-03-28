@@ -1,13 +1,21 @@
 #pragma once
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 namespace imgui_own_render_code
 {
-	// 帧缓冲(FBO)相关
-	extern unsigned int fbo;          // 帧缓冲对象
-	extern unsigned int textureColor; // FBO颜色附件（纹理）
-	extern unsigned int rbo;          // 渲染缓冲对象（深度/模板）
-
 	void create_framebuffer();
 
+	void create_shader_and_model();
+
+	void render_scene();
+
 	void render_ui();
+
+	void process_input(GLFWwindow* window);
+
+	void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+	void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+	void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 }

@@ -16,6 +16,8 @@ public:
     // 程序ID
     unsigned int ID;
 
+    Shader(){}
+
     // 构造器读取并构建着色器
     Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr,
            const char* tessControlPath = nullptr, const char* tessEvalPath = nullptr)

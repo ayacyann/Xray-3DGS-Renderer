@@ -17,6 +17,9 @@ public:
     unsigned int VAO;
     int vertex_count;
     int success;
+
+    Ownplymodel(){}
+
     Ownplymodel(string const& path, bool gamma = false) : loadpath(path), gamma_correction(gamma)
     {
         loadModel(path);
