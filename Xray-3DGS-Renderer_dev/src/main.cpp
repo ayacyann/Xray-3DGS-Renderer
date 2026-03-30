@@ -146,7 +146,7 @@ int main()
 
 
 
-    // imgui_own_render_code÷°ª∫≥Â
+    // imgui_own_render_code÷°ª∫≥Âshader_model
     imgui_own_render_code::create_framebuffer();
     imgui_own_render_code::create_shader_and_model();
 
