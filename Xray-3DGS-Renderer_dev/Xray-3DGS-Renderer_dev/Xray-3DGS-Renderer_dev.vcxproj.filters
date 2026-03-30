@@ -80,6 +80,9 @@
     <ClCompile Include="..\src\imgui_own_render_code.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\ImGuiFileDialog-0.6.8\ImGuiFileDialog.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shader\shader.frag">

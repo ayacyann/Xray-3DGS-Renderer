@@ -3,6 +3,8 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "ImGuiFileDialog.h"
+#include "ImGuiFileDialogConfig.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -63,16 +65,27 @@ namespace imgui_own_render_code
 
     Shader shader;
     Ownplymodel ourModel;
+    string vert_shader_path = "../shader/shader.vert";
+    string frag_shader_path = "../shader/shader.frag";
+    string model_path = "../resources/model/.ply/Lingo/foot.ply";
     void create_shader_and_model()
     {
+        cout << vert_shader_path << endl;
+        cout << frag_shader_path << endl;
+        cout << model_path << endl;
+
         // 创建shader程序
         // ---------------
-        shader = Shader("../shader/shader.vert", "../shader/shader.frag");
+        shader = Shader(vert_shader_path.c_str(), frag_shader_path.c_str());
 
         // 加载模型
         // ----------------
-        ourModel = Ownplymodel("../resources/model/.ply/Lingo/foot.ply");
+        ourModel = Ownplymodel(model_path);
+
+        cout << "create_shader_and_model" << endl;
     }
+
+
 
 
 
@@ -113,6 +126,14 @@ namespace imgui_own_render_code
 
 
 
+    bool show_vert_dialog = false;
+    bool show_frag_dialog = false;
+    bool show_model_dialog = false;
+    static void choose_path(string& buttonLabel)
+    {
+        
+    }
+
 
 	void render_ui()
 	{
@@ -126,6 +147,119 @@ namespace imgui_own_render_code
         }
 
 		ImGui::End();
+
+
+        ImGui::Begin("shader_model");
+
+        if (ImGui::Button("vert_shader_path"))
+        {
+            show_vert_dialog = true;
+            IGFD::FileDialogConfig config;
+            config.path = "."; // 初始路径
+
+            ImGuiFileDialog::Instance()->OpenDialog(
+                "ChooseFileDlgKey",         // 对话框key
+                "Choose File",              // 标题
+                ".*,.vert,.frag,.ply",         // 过滤器
+                config                      // 用config结构体传参
+            );           
+        }
+        if (show_vert_dialog)
+        {
+            // 显示对话框
+            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+            {
+                // 用户点击OK
+                if (ImGuiFileDialog::Instance()->IsOk())
+                {
+                    // 获取选中的文件路径
+                    std::string file_path = ImGuiFileDialog::Instance()->GetFilePathName();
+                    // 在这里处理文件
+                    vert_shader_path = file_path;
+                    printf("选择文件: %s\n", file_path.c_str());
+                }
+                // 关闭对话框
+                ImGuiFileDialog::Instance()->Close();
+                show_vert_dialog = false;
+            }
+        }
+        ImGui::Text(vert_shader_path.c_str());
+
+        if (ImGui::Button("frag_shader_path"))
+        {
+            show_frag_dialog = true;
+            IGFD::FileDialogConfig config;
+            config.path = "."; // 初始路径
+
+            ImGuiFileDialog::Instance()->OpenDialog(
+                "ChooseFileDlgKey",         // 对话框key
+                "Choose File",              // 标题
+                ".*,.vert,.frag,.ply",         // 过滤器
+                config                      // 用config结构体传参
+            );           
+        }
+        if (show_frag_dialog)
+        {
+            // 显示对话框
+            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+            {
+                // 用户点击OK
+                if (ImGuiFileDialog::Instance()->IsOk())
+                {
+                    // 获取选中的文件路径
+                    std::string file_path = ImGuiFileDialog::Instance()->GetFilePathName();
+                    // 在这里处理文件
+                    frag_shader_path = file_path;
+                    printf("选择文件: %s\n", file_path.c_str());
+                }
+                // 关闭对话框
+                ImGuiFileDialog::Instance()->Close();
+                show_frag_dialog = false;
+            }
+        }
+        ImGui::Text(frag_shader_path.c_str());
+
+        if (ImGui::Button("model_path"))
+        {
+            show_model_dialog = true;
+            IGFD::FileDialogConfig config;
+            config.path = "."; // 初始路径
+
+            ImGuiFileDialog::Instance()->OpenDialog(
+                "ChooseFileDlgKey",         // 对话框key
+                "Choose File",              // 标题
+                ".*,.vert,.frag,.ply",         // 过滤器
+                config                      // 用config结构体传参
+            );           
+        }
+        if (show_model_dialog)
+        {
+            // 显示对话框
+            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+            {
+                // 用户点击OK
+                if (ImGuiFileDialog::Instance()->IsOk())
+                {
+                    // 获取选中的文件路径
+                    std::string file_path = ImGuiFileDialog::Instance()->GetFilePathName();
+                    // 在这里处理文件
+                    model_path = file_path;
+                    printf("选择文件: %s\n", file_path.c_str());
+                }
+                // 关闭对话框
+                ImGuiFileDialog::Instance()->Close();
+                show_model_dialog = false;
+            }
+        }
+        ImGui::Text(model_path.c_str());
+
+        
+        if (ImGui::Button("creat"))
+        {
+            create_shader_and_model();
+        }
+
+        ImGui::End();     
 	}
 
 
