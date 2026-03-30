@@ -116,6 +116,8 @@ int main()
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         Shader.setMat4("MVP", projection * view * model);
+		Shader.setFloat("fov", camera.Zoom);
+		Shader.setMat4("viewMatrix", view);
         Shader.setVec3("cameraPos", camera.Position);
 		Shader.setFloat("exposure", exposure);
      
