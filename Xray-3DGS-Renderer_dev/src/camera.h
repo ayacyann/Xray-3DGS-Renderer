@@ -37,6 +37,9 @@ public:
 	float MovementSpeed;
 	float MouseSensitivity;
 	float Zoom;
+	glm::vec2 Focal;
+	glm::vec2 Fov;
+	glm::vec2 ScreenSize;
 
 	Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
 	{	
@@ -44,6 +47,9 @@ public:
 		WorldUp = up;
 		Yaw = yaw;
 		Pitch = pitch;
+		Focal = glm::vec2(ZOOM, ZOOM);
+		ScreenSize = glm::vec2(512.0f, 512.0f);
+		Fov = Focal2Fov(Focal, ScreenSize);
 		updateCameraVectors();
 	}
 	Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
@@ -52,24 +58,49 @@ public:
 		WorldUp = glm::vec3(upX, upY, upZ);
 		Yaw = yaw;
 		Pitch = pitch;
+		Focal = glm::vec2(ZOOM, ZOOM);
+		ScreenSize = glm::vec2(512.0f, 512.0f);
+		Fov = Focal2Fov(Focal, ScreenSize);
 		updateCameraVectors();
 	}
 	// TODO: 通过相机参数构造相机，当前函数仍有bug，后续需要进行调整更改
-	Camera(float angle, float DSO, float sDetector, float DSD, float nVoxel, float dVoxel)
+	Camera(glm::vec2 shape, glm::vec2 nDetector, glm::vec2 dDetector, float DSD, glm::vec3 nVoxel, glm::vec3 dVoxel, float scale=1000.0) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Position(glm::vec3(0.0f, 0.0f, 3.0f)), WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)), Yaw(YAW), Pitch(PITCH)
 	{
-		float scale = 2 / (nVoxel / dVoxel / 1000);
-		glm::mat4 c2w = angle2pose(DSO * scale, glm::radians(angle));
-		glm::mat4 w2c = glm::inverse(c2w);
-		glm::mat3 R = glm::mat3(w2c);
-		Position = glm::vec3(w2c[3]);
+		glm::vec3 sVoxel = nVoxel * dVoxel / scale;
+		glm::vec2 sDetector = nDetector * dDetector / scale;
 
-		Pitch = glm::degrees(asin(Front.y));
-		Yaw = glm::degrees(atan2(Front.z, Front.x));
+		float sceneScale = 2 / glm::max(sVoxel.x,glm::max(sVoxel.y, sVoxel.z));
 
-		WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-		updateCameraVectors();
+		sVoxel *= sceneScale;
+		DSD = DSD * sceneScale / scale;
+		sDetector *= sceneScale;
 
-		Zoom = glm::degrees(2.0f * atan2f(sDetector / 2.0f, DSD));
+		float fovX = std::atan2(sDetector.y / 2.0f, DSD) * 2.0f;
+		float fovY = std::atan2(sDetector.x / 2.0f, DSD) * 2.0f;
+		Fov = glm::vec2(glm::degrees(fovX), glm::degrees(fovY));
+		Zoom = Fov.x;
+		Focal = Fov2Focal(Fov, shape);
+		ScreenSize = shape;
+	}
+
+	void SetScreenSize(glm::vec2 screenSize)
+	{
+		ScreenSize = screenSize;
+		Focal = Fov2Focal(Fov, ScreenSize);
+	}
+
+	glm::vec2 Fov2Focal(glm::vec2 fov, glm::vec2 sensorSize)
+	{
+		float focalX = (sensorSize.x / 2.0f) / tan(glm::radians(fov.x) / 2.0f);
+		float focalY = (sensorSize.y / 2.0f) / tan(glm::radians(fov.y) / 2.0f);
+		return glm::vec2(focalX, focalY);
+	}
+
+	glm::vec2 Focal2Fov(glm::vec2 focal, glm::vec2 sensorSize)
+	{
+		float fovX = 2.0f * glm::degrees(atan((sensorSize.x / 2.0f) / focal.x));
+		float fovY = 2.0f * glm::degrees(atan((sensorSize.y / 2.0f) / focal.y));
+		return glm::vec2(fovX, fovY);
 	}
 
 	glm::mat4 GetViewMatrix()

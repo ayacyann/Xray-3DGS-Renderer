@@ -27,11 +27,15 @@ float lastFrame = 0.0f; // 上一帧的时间
 float oriMovementSpeed = 3.0f;
 float accMovementSpeed = 5.0f;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-//Camera camera(0.0f, 1.0f, 0.001f, 1.5f, 256, 1);
+// default
+//Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+// aneurism
+//Camera camera(glm::vec2(SCR_WIDTH, SCR_HEIGHT), glm::vec2(512), glm::vec2(1.0), 1500.0, glm::vec3(256.0), glm::vec3(1.0));
+// chest
+Camera camera(glm::vec2(SCR_WIDTH, SCR_HEIGHT), glm::vec2(512), glm::vec2(1.0), 1500.0, glm::vec3(256), glm::vec3(1.0));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
-float exposure = 2.0f;
+float exposure = 1.0f;
 bool firstMouse = true;
 bool ifmouse = 0;
 bool key_pressed[GLFW_KEY_LAST] = { false };
@@ -86,7 +90,7 @@ int main()
 
     // 加载模型
     // ----------------
-    Ownplymodel ourModel("../resources/model/.ply/Lingo/foot.ply");
+    Ownplymodel ourModel("../resources/model/.ply/Lingo/chest.ply");
 
     // 渲染循环
     // -------
@@ -116,10 +120,12 @@ int main()
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         Shader.setMat4("MVP", projection * view * model);
-		Shader.setFloat("fov", camera.Zoom);
+        Shader.setVec2("tanFov", glm::tan(camera.Fov / 2.0f));
+        Shader.setVec2("focal",camera.Focal);
 		Shader.setMat4("viewMatrix", view);
         Shader.setVec3("cameraPos", camera.Position);
 		Shader.setFloat("exposure", exposure);
+		Shader.setVec2("screenSize", camera.ScreenSize);
      
         ourModel.Draw(Shader);
 
@@ -185,9 +191,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     //camera.ProcessMouseScroll(static_cast<float>(yoffset));
 	if (yoffset > 0)
-		exposure += 0.25f;
+		exposure += 0.1f;
 	else
-		exposure -= 0.25f;
+		exposure -= 0.1f;
 }
 
 // 键盘输入
