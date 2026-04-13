@@ -54,8 +54,6 @@ int main()
     glfwSetCursorPosCallback(window, imgui_own_render_code::mouse_callback);// 鼠标移动回调
     glfwSetScrollCallback(window, imgui_own_render_code::scroll_callback);// 鼠标滚轮回调
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);// 鼠标停留在窗口中
-
     // glad加载OpenGL的函数指针
     // ----------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -63,9 +61,6 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-   
-
-
 
     // imgui---------------------------------------
      // Setup Dear ImGui context
@@ -131,25 +126,20 @@ int main()
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // imgui---------------------------------------
 
-
-
     // 纹理
     // --
     stbi_set_flip_vertically_on_load(true);//垂直方向翻转纹理
-
 
     // 不需要深度测试
     //glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     glEnable(GL_PROGRAM_POINT_SIZE);
-
-
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     // imgui_own_render_code帧缓冲shader_model
     imgui_own_render_code::create_framebuffer();
     imgui_own_render_code::create_shader_and_model();
-
 
     // 渲染循环
     // -------
@@ -163,12 +153,9 @@ int main()
         // -------
         imgui_own_render_code::render_scene();
 
-
         // glfw 检查触发事件，更新窗口状态，并调用对应的回调函数
         // ------------------------------------------------------------
         glfwPollEvents();
-
-
 
         // imgui---------------------------------------
         // Poll and handle events (inputs, window resize, etc.)
@@ -227,12 +214,9 @@ int main()
             ImGui::End();
         }
 
-
         // imgui own render code ----------------------------------
-        imgui_own_render_code::render_ui();
+        imgui_own_render_code::render_ui(window);
         // imgui own render code ----------------------------------
-
-
 
         // Rendering
         ImGui::Render();
@@ -255,18 +239,14 @@ int main()
         }
         // imgui---------------------------------------
 
-
-
         // glfw 交换颜色缓充
         glfwSwapBuffers(window);
     }
-
 
     // imgui Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
 
     // glfw 释放之前的分配的所有资源
     // ----------------------

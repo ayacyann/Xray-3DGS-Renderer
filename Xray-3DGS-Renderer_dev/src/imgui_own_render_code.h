@@ -11,7 +11,7 @@ namespace imgui_own_render_code
 
 	void render_scene();
 
-	void render_ui();
+	void render_ui(GLFWwindow* window);
 
 	void process_input(GLFWwindow* window);
 

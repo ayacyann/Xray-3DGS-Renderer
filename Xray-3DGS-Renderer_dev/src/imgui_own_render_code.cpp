@@ -26,6 +26,11 @@ namespace imgui_own_render_code
     unsigned int m_fbo;          // 帧缓冲对象
     unsigned int m_fboTexture; // FBO颜色附件（纹理）
 
+    extern bool g_isModelRenderWindowActiveForMouse = false;
+    extern bool g_isFirstMouseInModelRenderWindow = true;
+    extern double g_lastX = 0.0;
+    extern double g_lastY = 0.0;
+    extern bool isFocusMoving = false;
 
     // 初始化帧缓冲 FBO
     void create_framebuffer()
@@ -53,15 +58,10 @@ namespace imgui_own_render_code
         // 检查FBO是否完整
         bool success = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
     }
-
-
-
 
     Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
     //Camera camera(0.0f, 1.0f, 0.001f, 1.5f, 256, 1);
-
 
     Shader shader;
     Ownplymodel ourModel;
@@ -85,10 +85,6 @@ namespace imgui_own_render_code
         cout << "create_shader_and_model" << endl;
     }
 
-
-
-
-
     extern const unsigned int SCR_WIDTH = 1280;
     extern const unsigned int SCR_HEIGHT = 720;
     float deltaTime = 0.0f; // 当前帧与上一帧的时间差
@@ -108,7 +104,6 @@ namespace imgui_own_render_code
         glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
 
         shader.use();
 
@@ -124,8 +119,6 @@ namespace imgui_own_render_code
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-
-
     bool show_vert_dialog = false;
     bool show_frag_dialog = false;
     bool show_model_dialog = false;
@@ -134,8 +127,7 @@ namespace imgui_own_render_code
         
     }
 
-
-	void render_ui()
+	void render_ui(GLFWwindow* window)
 	{
         ImGui::Begin("model render");
         
@@ -144,10 +136,46 @@ namespace imgui_own_render_code
             ImGui::Image((ImTextureID)(intptr_t)m_fboTexture, 
                 ImVec2(m_renderWidth, m_renderHeight), 
                 ImVec2(0, 1), ImVec2(1, 0));
+
+            bool img_hovered = ImGui::IsItemHovered();
+            bool mouse_clicked = ImGui::IsAnyMouseDown();
+
+            double currentX, currentY;
+            glfwGetCursorPos(window, &currentX, &currentY);
+
+            if (g_isFirstMouseInModelRenderWindow)
+            {
+                g_lastX = currentX;
+                g_lastY = currentY;
+                // 防止下一帧再次计算
+                g_isFirstMouseInModelRenderWindow = false;
+            }
+            float xOffset = currentX - g_lastX;
+            float yOffset = g_lastY - currentY;
+
+            g_lastX = currentX;
+            g_lastY = currentY;
+
+            if (img_hovered && mouse_clicked)
+            {
+                // 当鼠标在Image上点击时，激活当前窗口状态
+                g_isModelRenderWindowActiveForMouse = true;
+                g_isFirstMouseInModelRenderWindow = true;
+            }
+            else if (g_isModelRenderWindowActiveForMouse && !isFocusMoving)
+            {
+                ImGuiIO& io = ImGui::GetIO();
+                // 取消当前的激活状态
+                bool clicked_outside = ImGui::IsAnyMouseDown() && !img_hovered;
+                if (io.WantCaptureMouse && clicked_outside)
+                {
+                    g_isModelRenderWindowActiveForMouse = false;
+                    g_isFirstMouseInModelRenderWindow = true;
+                }
+            }
         }
 
 		ImGui::End();
-
 
         ImGui::Begin("shader_model");
 
@@ -262,106 +290,94 @@ namespace imgui_own_render_code
         ImGui::End();     
 	}
 
-
-
     float oriMovementSpeed = 3.0f;
     float accMovementSpeed = 5.0f;
 
-    bool firstMouse = true;
-    bool ifmouse = 0;
     bool key_pressed[GLFW_KEY_LAST] = { false };
 
     // 键盘输入
     // --------------
     void process_input(GLFWwindow* window)
     {
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(window, true);
-
-        if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !key_pressed[GLFW_KEY_TAB])
+        if (g_isModelRenderWindowActiveForMouse)
         {
-            key_pressed[GLFW_KEY_TAB] = true;
-            ifmouse = !ifmouse;
-            if (ifmouse)
+            if (isFocusMoving)
             {
-                firstMouse = true;
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); // 鼠标
+                ImGuiIO& io = ImGui::GetIO();
+                io.WantCaptureKeyboard = false;
+                io.WantCaptureMouse = false;
+                io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange; // 确保没有禁用光标变化
+                io.MouseDrawCursor = false; // ImGui 不绘制光标
             }
-            else
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+                glfwSetWindowShouldClose(window, true);
+
+            if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS && !key_pressed[GLFW_KEY_TAB])
             {
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // 鼠标停留在窗口中                                     
+                key_pressed[GLFW_KEY_TAB] = true;
+            }
+            else if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE)
+            {
+                key_pressed[GLFW_KEY_TAB] = false;
+            }
+
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+                camera.ProcessKeyboard(FORWARD, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+                camera.ProcessKeyboard(BACKWARD, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+                camera.ProcessKeyboard(LEFT, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+                camera.ProcessKeyboard(RIGHT, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+                camera.ProcessKeyboard(DOWN, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+                camera.ProcessKeyboard(UP, deltaTime);
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+                camera.MovementSpeed = accMovementSpeed;
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
+                camera.MovementSpeed = oriMovementSpeed;
+            if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+            {
+                isFocusMoving = true;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+            else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE)
+            {
+                isFocusMoving = false;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
         }
-        else if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE)
-        {
-            key_pressed[GLFW_KEY_TAB] = false;
-        }
-
-
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-            camera.ProcessKeyboard(DOWN, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            camera.ProcessKeyboard(UP, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.MovementSpeed = accMovementSpeed;
-        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE)
-            camera.MovementSpeed = oriMovementSpeed;
     }
-
-
 
     // 鼠标滚轮回调
     // --------------
     void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     {
+        if (!g_isModelRenderWindowActiveForMouse)
+        {
+            return;
+        }
         //camera.ProcessMouseScroll(static_cast<float>(yoffset));
         if (yoffset > 0)
             exposure += 0.25f;
         else
             exposure -= 0.25f;
     }
-
-
-
-    float lastX = SCR_WIDTH / 2.0f;
-    float lastY = SCR_HEIGHT / 2.0f;
   
     // 鼠标移动回调
     // --------------
     void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     {
-        float xpos = 0;
-        float ypos = 0;
-
-        if (!ifmouse)
-        {
-            xpos = static_cast<float>(xposIn);
-            ypos = static_cast<float>(yposIn);
-        }
-        else
+        if (!g_isModelRenderWindowActiveForMouse || !isFocusMoving)
         {
             return;
         }
 
-        if (firstMouse)
-        {
-            lastX = xpos;
-            lastY = ypos;
-            firstMouse = false;
-        }
-
-        float xoffset = xpos - lastX;
-        float yoffset = lastY - ypos;
-        lastX = xpos;
-        lastY = ypos;
+        float xoffset = xposIn - g_lastX;
+        float yoffset = g_lastY - yposIn;
+        g_lastX = xposIn;
+        g_lastY = yposIn;
 
         float sensitivity = 0.1f;
         xoffset *= sensitivity;
@@ -369,7 +385,6 @@ namespace imgui_own_render_code
 
         camera.ProcessMouseMovement(xoffset, yoffset);
     }
-
 
     // 调整窗口大小回调函数
     // --------------

@@ -1005,7 +1005,7 @@ static void ImGui_ImplGlfw_UpdateMouseCursor()
             if (bd->LastMouseCursor != nullptr)
             {
                 // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+                //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
                 bd->LastMouseCursor = nullptr;
             }
         }
