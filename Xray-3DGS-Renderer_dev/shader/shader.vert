@@ -113,6 +113,7 @@ void main()
     cov3D = computeCov3D(scale, rotation);
     mu = 0;
     cov2D = computeCov2D(aCenter.xzy, cov3D, mu);
-    vec3 worldPos = rotation * (scale * aCubePos * 1) + aCenter.xzy;
+    vec3 sigma;
+    vec3 worldPos = rotation * (scale * aCubePos * 3) + aCenter.xzy;
     gl_Position = MVP * vec4(worldPos, 1.0);
 }

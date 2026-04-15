@@ -64,7 +64,7 @@ public:
 		updateCameraVectors();
 	}
 	// TODO: 通过相机参数构造相机，当前函数仍有bug，后续需要进行调整更改
-	Camera(glm::vec2 shape, glm::vec2 nDetector, glm::vec2 dDetector, float DSD, glm::vec3 nVoxel, glm::vec3 dVoxel, float scale=1000.0) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Position(glm::vec3(0.0f, 0.0f, 3.0f)), WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)), Yaw(YAW), Pitch(PITCH)
+	Camera(glm::vec2 shape, glm::vec2 nDetector, glm::vec2 dDetector, float DSD, glm::vec3 nVoxel, glm::vec3 dVoxel, float scale=1000.0) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Position(glm::vec3(0.0f, 0.0f, 6.0f)), WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)), Yaw(YAW), Pitch(PITCH)
 	{
 		glm::vec3 sVoxel = nVoxel * dVoxel / scale;
 		glm::vec2 sDetector = nDetector * dDetector / scale;
