@@ -41,9 +41,10 @@ void main()
     if (power > 0){
         discard;
     }
-    float factor = exp(power);
+    float factor = density * mu * exp(power);
     if (factor < 1e-6){
         discard;
     }
-	FragColor = vec4(vec3(density * mu * factor * exposure), 1.0);
+	FragColor = vec4(vec3(factor * exposure), 1.0);
+    FragColor = vec4(1,0,0,1);
 }

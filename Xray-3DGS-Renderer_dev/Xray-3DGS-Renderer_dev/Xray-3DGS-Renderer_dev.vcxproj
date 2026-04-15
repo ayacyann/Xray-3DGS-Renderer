@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\includes;..\lib;</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\includes;..\lib;..\imgui-1.92.6-docking;..\imgui-1.92.6-docking\backends;..\ImGuiFileDialog-0.6.8</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);..\includes;..\lib</LibraryPath>
     <LibraryWPath>$(LibraryWPath)</LibraryWPath>
   </PropertyGroup>
@@ -131,6 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\src\camera.h" />
+    <ClInclude Include="..\src\imgui_own_render_code.h" />
     <ClInclude Include="..\src\plyexporter.h" />
     <ClInclude Include="..\src\plyformat_parser.h" />
     <ClInclude Include="..\src\mesh.h" />
@@ -139,7 +140,16 @@
     <ClInclude Include="..\src\shader.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\imgui-1.92.6-docking\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\imgui-1.92.6-docking\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui.cpp" />
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_demo.cpp" />
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_draw.cpp" />
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_tables.cpp" />
+    <ClCompile Include="..\imgui-1.92.6-docking\imgui_widgets.cpp" />
+    <ClCompile Include="..\ImGuiFileDialog-0.6.8\ImGuiFileDialog.cpp" />
     <ClCompile Include="..\src\glad.c" />
+    <ClCompile Include="..\src\imgui_own_render_code.cpp" />
     <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>

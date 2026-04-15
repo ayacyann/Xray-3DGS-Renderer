@@ -9,26 +9,26 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-using namespace std;
 
-struct Ply_Vertex {
-    // position
-    glm::vec3 Position;
-    // normal
-    glm::vec3 Normal;
-    // density
-    glm::vec1 Density;
-    // mark
-    //glm::vec1 Mark;
-    // scale
-    glm::vec3 Scale;
-    // rot
-    glm::vec4 Rot;
-};
+using namespace std;
 
 class Plyexporter
 {
 public:
+    struct Ply_Vertex {
+        // position
+        glm::vec3 Position;
+        // normal
+        glm::vec3 Normal;
+        // density
+        glm::vec1 Density;
+        // mark
+        //glm::vec1 Mark;
+        // scale
+        glm::vec3 Scale;
+        // rot
+        glm::vec4 Rot;
+    };
     int success;
     int vertex_count;
 	vector<Ply_Vertex> vertices;

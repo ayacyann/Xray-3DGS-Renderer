@@ -61,7 +61,7 @@ mat2 computeCov2D(vec3 worldCenterPos, mat3 cov3D, out float mu){
     float hate = cov[1][2];
     float hatf = cov[2][2];
     float diamond = hata * hatd - hatb * hatb;
-    float eps = 1e-20;
+    float eps = 1e-6;
     float circ = hata * hatd * hatf + 2.0 * hatb * hatc * hate - hata * hate * hate - hatd * hatc * hatc - hatf * hatb * hatb;
     float muSquare = 2 * 3.1415926 * max(abs(circ), eps) / max(abs(diamond), eps);
     if (muSquare > 0.0) {
@@ -114,6 +114,6 @@ void main()
     mu = 0;
     cov2D = computeCov2D(aCenter.xzy, cov3D, mu);
     vec3 sigma;
-    vec3 worldPos = rotation * (scale * aCubePos * 3) + aCenter.xzy;
+    vec3 worldPos = rotation * (scale * aCubePos * 1) + aCenter.xzy;
     gl_Position = MVP * vec4(worldPos, 1.0);
 }

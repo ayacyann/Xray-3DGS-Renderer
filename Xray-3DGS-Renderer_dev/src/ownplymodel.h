@@ -16,9 +16,13 @@ public:
     bool gamma_correction;
     unsigned int VAO;
     int vertex_count;
+    int success;
+
+    Ownplymodel(){}
+
     Ownplymodel(string const& path, bool gamma = false) : loadpath(path), gamma_correction(gamma)
     {
-        int success = loadModel(path);
+        loadModel(path);
         if (success)
         {
             cout << "loadmodel successfully at ::" << loadpath << endl;
@@ -42,7 +46,7 @@ private:
         {
             cout << "parser解析header错误" << endl;
 
-            return 0;
+            return this->success = 0;
         }
         Plyexporter exporter(path);
         this->VAO = exporter.VAO;
@@ -50,9 +54,9 @@ private:
         if (!exporter.success)
         {
             cout << "exporter导出顶点数据错误" << endl;
-            return 0;
+            return this->success = 0;
         }
 
-        return 1;
+        return this->success = 1;
     }
 };
