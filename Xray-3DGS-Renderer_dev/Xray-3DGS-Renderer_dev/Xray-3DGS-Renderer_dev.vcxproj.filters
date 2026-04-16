@@ -48,6 +48,12 @@
     <ClInclude Include="..\src\imgui_own_render_code.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\cube.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\stb_image_write.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp">
@@ -89,6 +95,12 @@
       <Filter>资源文件\shader</Filter>
     </None>
     <None Include="..\shader\shader.vert">
+      <Filter>资源文件\shader</Filter>
+    </None>
+    <None Include="..\shader\cube.frag">
+      <Filter>资源文件\shader</Filter>
+    </None>
+    <None Include="..\shader\cube.vert">
       <Filter>资源文件\shader</Filter>
     </None>
   </ItemGroup>

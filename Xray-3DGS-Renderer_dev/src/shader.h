@@ -90,6 +90,15 @@ public:
         // 2. 编译着色器
         unsigned int vertex, fragment;
 
+        // --- 调试代码：检查函数指针是否为空 ---
+        if (glCreateShader == nullptr) {
+            std::cerr << "FATAL ERROR: glCreateShader is NULL (0x00000000)!" << std::endl;
+            std::cerr << "This means GLAD (or GLEW) was not initialized correctly." << std::endl;
+            // 这里可以直接 return 或者 throw，防止崩溃
+            return;
+        }
+        std::cout << "glCreateShader address: " << glCreateShader << std::endl; // 应该输出一个非0地址
+        
         // 顶点着色器
         vertex = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex, 1, &vShaderCode, NULL);

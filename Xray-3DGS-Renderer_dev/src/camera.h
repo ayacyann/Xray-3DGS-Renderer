@@ -42,7 +42,7 @@ public:
 	glm::vec2 ScreenSize;
 
 	Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
-	{	
+	{
 		Position = position;
 		WorldUp = up;
 		Yaw = yaw;
@@ -64,12 +64,12 @@ public:
 		updateCameraVectors();
 	}
 	// TODO: 通过相机参数构造相机，当前函数仍有bug，后续需要进行调整更改
-	Camera(glm::vec2 shape, glm::vec2 nDetector, glm::vec2 dDetector, float DSD, glm::vec3 nVoxel, glm::vec3 dVoxel, float scale=1000.0) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Position(glm::vec3(0.0f, 0.0f, 6.0f)), WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)), Yaw(YAW), Pitch(PITCH)
+	Camera(glm::vec2 shape, glm::vec2 nDetector, glm::vec2 dDetector, float DSD, glm::vec3 nVoxel, glm::vec3 dVoxel, float scale = 1000.0) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Position(glm::vec3(0.0f, 0.0f, 6.0f)), WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)), Yaw(YAW), Pitch(PITCH)
 	{
 		glm::vec3 sVoxel = nVoxel * dVoxel / scale;
 		glm::vec2 sDetector = nDetector * dDetector / scale;
 
-		float sceneScale = 2 / glm::max(sVoxel.x,glm::max(sVoxel.y, sVoxel.z));
+		float sceneScale = 2 / glm::max(sVoxel.x, glm::max(sVoxel.y, sVoxel.z));
 
 		sVoxel *= sceneScale;
 		DSD = DSD * sceneScale / scale;
@@ -81,6 +81,7 @@ public:
 		Zoom = Fov.x;
 		Focal = Fov2Focal(Fov, shape);
 		ScreenSize = shape;
+		updateCameraVectors();
 	}
 
 	void SetScreenSize(glm::vec2 screenSize)
@@ -104,7 +105,7 @@ public:
 	}
 
 	glm::mat4 GetViewMatrix()
-	{	
+	{
 		return glm::lookAt(Position, Position + Front, Up);
 	}
 
@@ -159,7 +160,7 @@ public:
 
 		Yaw += xoffset;
 		Pitch += yoffset;
-		
+
 		if (constrainPitch)
 		{
 			if (Pitch > 89.0f)
@@ -179,7 +180,7 @@ public:
 		if (Zoom > 45.0f)
 			Zoom = 45.0f;
 	}
-	
+
 private:
 	void updateCameraVectors()
 	{
@@ -188,8 +189,9 @@ private:
 		front.y = sin(glm::radians(Pitch));
 		front.z = cos(glm::radians(Pitch)) * sin(glm::radians(Yaw));
 		Front = glm::normalize(front);
-		Right = glm::normalize(glm::cross(Front, WorldUp));  
+		Right = glm::normalize(glm::cross(Front, WorldUp));
 		Up = glm::normalize(glm::cross(Right, Front));
+		Front = glm::normalize(glm::cross(Up, Right));
 	}
 };
 

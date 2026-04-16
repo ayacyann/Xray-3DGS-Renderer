@@ -10,10 +10,7 @@ layout (location = 6) in vec4 aRot;
 
 out float density;
 //out float mark;
-out vec3 scale;
-out mat3 rotation;
 out vec2 center;
-out mat3 cov3D;
 out mat2 cov2D;
 out float mu;
 
@@ -34,19 +31,29 @@ mat3 computeCov3D(vec3 scale, mat3 rot){
 }
 
 mat2 computeCov2D(vec3 worldCenterPos, mat3 cov3D, out float mu){
-    vec3 centerInView = vec3(viewMatrix * vec4(worldCenterPos, 1.0));
-    float limx = 1.3f * tanFov.x;
-    float limy = 1.3f * tanFov.y;
-    float txtz = centerInView.x / centerInView.z;
-    float tytz = centerInView.y / centerInView.z;
-    centerInView.x = min(limx, max(-limx, txtz)) * centerInView.z;
-    centerInView.y = min(limy, max(-limy, tytz)) * centerInView.z;
-    float l = length(centerInView);
-    mat3 J = mat3(
-        vec3(focal.x / centerInView.z, 0.0, -(focal.x * centerInView.x / (centerInView.z * centerInView.z))),
-        vec3(0.0, focal.y / centerInView.z, -(focal.y * centerInView.y / (centerInView.z * centerInView.z))),
-        vec3(centerInView.x / l, centerInView.y / l, centerInView.z / l)
-    );
+    mat3 J;
+    if (length(tanFov)<1e-3) {
+        J = mat3(
+            vec3(focal.x, 0.0, 0.0),
+            vec3(0.0, focal.y, 0.0),
+            vec3(0.0, 0.0, 1.0)
+        );
+    }
+    else{
+        vec3 centerInView = vec3(viewMatrix * vec4(worldCenterPos, 1.0));
+        float limx = 1.3f * tanFov.x;
+        float limy = 1.3f * tanFov.y;
+        float txtz = centerInView.x / centerInView.z;
+        float tytz = centerInView.y / centerInView.z;
+        centerInView.x = min(limx, max(-limx, txtz)) * centerInView.z;
+        centerInView.y = min(limy, max(-limy, tytz)) * centerInView.z;
+        float l = length(centerInView);
+        J = mat3(
+            vec3(focal.x / centerInView.z, 0.0, -(focal.x * centerInView.x / (centerInView.z * centerInView.z))),
+            vec3(0.0, focal.y / centerInView.z, -(focal.y * centerInView.y / (centerInView.z * centerInView.z))),
+            vec3(centerInView.x / l, centerInView.y / l, centerInView.z / l)
+        );
+    }
     mat3 W = mat3(
         vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]),
         vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]),
@@ -61,7 +68,7 @@ mat2 computeCov2D(vec3 worldCenterPos, mat3 cov3D, out float mu){
     float hate = cov[1][2];
     float hatf = cov[2][2];
     float diamond = hata * hatd - hatb * hatb;
-    float eps = 1e-6;
+    float eps = 1e-20;
     float circ = hata * hatd * hatf + 2.0 * hatb * hatc * hate - hata * hate * hate - hatd * hatc * hatc - hatf * hatb * hatb;
     float muSquare = 2 * 3.1415926 * max(abs(circ), eps) / max(abs(diamond), eps);
     if (muSquare > 0.0) {
@@ -105,15 +112,14 @@ void main()
 {
     //mark = aMark;
     density = softplus(aDensity);
-    scale = exp(aScale).xzy;
-    rotation = quatToMat3(aRot.xywz);
+    vec3 scale = exp(aScale).xzy;
+    mat3 rotation = quatToMat3(aRot.xywz);
     vec4 centerNDC = MVP * vec4(aCenter.xzy, 1.0);
     center = centerNDC.xy / centerNDC.w;
     center = (center + 1.0) / 2.0 * screenSize;
-    cov3D = computeCov3D(scale, rotation);
+    mat3 cov3D = computeCov3D(scale, rotation);
     mu = 0;
     cov2D = computeCov2D(aCenter.xzy, cov3D, mu);
-    vec3 sigma;
-    vec3 worldPos = rotation * (scale * aCubePos * 1) + aCenter.xzy;
+    vec3 worldPos = rotation * (scale * aCubePos * 3) + aCenter.xzy;
     gl_Position = MVP * vec4(worldPos, 1.0);
 }

@@ -7,11 +7,8 @@ uniform vec3 cameraPos;
 uniform float exposure;
 
 in float density;
-//in float mark;
-in vec3 scale;
-in mat3 rotation;
+//out float mark;
 in vec2 center;
-in mat3 cov3D;
 in mat2 cov2D;
 in float mu;
 
@@ -41,10 +38,6 @@ void main()
     if (power > 0){
         discard;
     }
-    float factor = density * mu * exp(power);
-    if (factor < 1e-6){
-        discard;
-    }
-	FragColor = vec4(vec3(factor * exposure), 1.0);
-    FragColor = vec4(1,0,0,1);
+    float factor = density * mu *  exp(power);
+	FragColor = vec4(vec3(density * mu *  exp(power) * exposure), 1.0);
 }
