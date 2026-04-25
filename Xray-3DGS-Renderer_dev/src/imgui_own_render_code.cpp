@@ -175,7 +175,6 @@ namespace imgui_own_render_code
     // aneurism
     //Camera camera(glm::vec2(SCR_WIDTH, SCR_HEIGHT), glm::vec2(512), glm::vec2(1.0), 1500.0, glm::vec3(256.0), glm::vec3(1.0));
     // chest
-    Camera camera(glm::vec2(512), glm::vec2(512), glm::vec2(1.0), 1500.0, glm::vec3(256), glm::vec3(1.0));
 
     Shader shader;
     Shader cameraShader;
@@ -184,6 +183,8 @@ namespace imgui_own_render_code
     string vert_shader_path = "../shader/shader.vert";
     string frag_shader_path = "../shader/shader.frag";
     string model_path = "../resources/model/.ply/Lingo/foot.ply";
+	string params_path = "../resources/model/.ply/foot.json";
+    Camera camera(params_path);
 
     void update_shader()
     {
@@ -288,6 +289,7 @@ namespace imgui_own_render_code
     bool show_model_dialog = false;
 	bool show_save_dialog = false;
 	bool is_save_xray = true;
+	bool show_params_dialog = false;
     std::vector<unsigned char> pixels(m_renderWidth * m_renderHeight * 3);
     static void choose_path(string& buttonLabel)
     {
@@ -637,6 +639,42 @@ namespace imgui_own_render_code
             }
         }
         ImGui::Text(model_path.c_str());
+
+        if (ImGui::Button("params_path"))
+        {
+            show_params_dialog = true;
+            IGFD::FileDialogConfig config;
+            config.path = "../resources/model/.ply"; // 初始路径
+            config.filePathName = params_path;
+
+            ImGuiFileDialog::Instance()->OpenDialog(
+                "ChooseFileDlgKey",         // 对话框key
+                "Choose File",              // 标题
+                ".json",         // 过滤器
+                config                      // 用config结构体传参
+            );
+        }
+        if (show_params_dialog)
+        {
+            // 显示对话框
+            if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+            {
+                // 用户点击OK
+                if (ImGuiFileDialog::Instance()->IsOk())
+                {
+                    // 获取选中的文件路径
+                    std::string file_path = ImGuiFileDialog::Instance()->GetFilePathName();
+                    // 在这里处理文件
+                    params_path = file_path;
+                    printf("选择文件: %s\n", file_path.c_str());
+                }
+				camera.UpdateCameraParameters(params_path);
+                // 关闭对话框
+                ImGuiFileDialog::Instance()->Close();
+                show_params_dialog = false;
+            }
+        }
+        ImGui::Text(params_path.c_str());
 
         ImGui::End();     
 	}

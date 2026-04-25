@@ -7,6 +7,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
 #include <vector>
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
 
 enum Camera_Movement {
 	FORWARD,
@@ -63,8 +65,22 @@ public:
 		Fov = Focal2Fov(Focal, ScreenSize);
 		updateCameraVectors();
 	}
+
 	// TODO: 通过相机参数构造相机，当前函数仍有bug，后续需要进行调整更改
 	Camera(glm::vec2 shape, glm::vec2 nDetector, glm::vec2 dDetector, float DSD, glm::vec3 nVoxel, glm::vec3 dVoxel, float scale = 1000.0) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Position(glm::vec3(0.0f, 0.0f, 6.0f)), WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)), Yaw(YAW), Pitch(PITCH)
+	{
+		UpdateCameraParameters(shape, nDetector, dDetector, DSD, nVoxel, dVoxel, scale);
+		updateCameraVectors();
+	}
+
+	// TODO: 通过相机参数构造相机，当前函数仍有bug，后续需要进行调整更改
+	Camera(const std::string& path, float scale = 1000.0) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Position(glm::vec3(0.0f, 0.0f, 6.0f)), WorldUp(glm::vec3(0.0f, 1.0f, 0.0f)), Yaw(YAW), Pitch(PITCH)
+	{
+		UpdateCameraParameters(path,scale);
+		updateCameraVectors();
+	}
+
+	void UpdateCameraParameters(glm::vec2 shape, glm::vec2 nDetector, glm::vec2 dDetector, float DSD, glm::vec3 nVoxel, glm::vec3 dVoxel, float scale = 1000.0)
 	{
 		glm::vec3 sVoxel = nVoxel * dVoxel / scale;
 		glm::vec2 sDetector = nDetector * dDetector / scale;
@@ -78,10 +94,24 @@ public:
 		float fovX = std::atan2(sDetector.y / 2.0f, DSD) * 2.0f;
 		float fovY = std::atan2(sDetector.x / 2.0f, DSD) * 2.0f;
 		Fov = glm::vec2(glm::degrees(fovX), glm::degrees(fovY));
-		Zoom = Fov.x;
+		Zoom = Fov.y;
 		Focal = Fov2Focal(Fov, shape);
 		ScreenSize = shape;
-		updateCameraVectors();
+	}
+
+	void UpdateCameraParameters(const std::string& path, float scale=1000.0)
+	{
+		std::ifstream f(path);
+		json js;
+		f >> js;
+		glm::vec2 shape = glm::vec2(js["shape"][0], js["shape"][1]);
+		glm::vec2 nDetector = glm::vec2(js["nDetector"][0], js["nDetector"][1]);
+		glm::vec2 dDetector = glm::vec2(js["dDetector"][0], js["dDetector"][1]);
+		float DSD = js["DSD"];
+		glm::vec3 nVoxel = glm::vec3(js["nVoxel"][0], js["nVoxel"][1], js["nVoxel"][2]);
+		glm::vec3 dVoxel = glm::vec3(js["dVoxel"][0], js["dVoxel"][1], js["dVoxel"][2]);
+		printf("Camera Parameters:\nshape: [%f, %f]\nnDetector: [%f, %f]\ndDetector: [%f, %f]\nDSD: %f\nnVoxel: [%f, %f, %f]\ndVoxel: [%f, %f, %f]\n", shape.x, shape.y, nDetector.x, nDetector.y, dDetector.x, dDetector.y, DSD, nVoxel.x, nVoxel.y, nVoxel.z, dVoxel.x, dVoxel.y, dVoxel.z);
+		UpdateCameraParameters(shape, nDetector, dDetector, DSD, nVoxel, dVoxel, scale);
 	}
 
 	void SetScreenSize(glm::vec2 screenSize)
