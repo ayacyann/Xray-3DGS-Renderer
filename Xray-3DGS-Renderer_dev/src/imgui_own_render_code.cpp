@@ -180,15 +180,16 @@ namespace imgui_own_render_code
     Shader cameraShader;
     Ownplymodel ourModel;
     Cube cameraPlane;
-    string vert_shader_path = "../shader/shader.vert";
-    string frag_shader_path = "../shader/shader.frag";
+    string vert_shader_path = "../shader/rasterizer.vert";
+    string frag_shader_path = "../shader/rasterizer.frag";
+	string geom_shader_path = "../shader/rasterizer.geom";
     string model_path = "../resources/model/.ply/Lingo/foot.ply";
 	string params_path = "../resources/model/.ply/foot.json";
     Camera camera(params_path);
 
     void update_shader()
     {
-        shader = Shader(vert_shader_path.c_str(), frag_shader_path.c_str());
+        shader = Shader(vert_shader_path.c_str(), frag_shader_path.c_str(), geom_shader_path.c_str());
     }
 
 	void update_model()
@@ -204,7 +205,7 @@ namespace imgui_own_render_code
 
         // 创建shader程序
         // ---------------
-        shader = Shader(vert_shader_path.c_str(), frag_shader_path.c_str());
+        shader = Shader(vert_shader_path.c_str(), frag_shader_path.c_str(), geom_shader_path.c_str());
 
         // 加载模型
         // ----------------

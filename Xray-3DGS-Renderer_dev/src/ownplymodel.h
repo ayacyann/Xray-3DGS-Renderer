@@ -35,7 +35,8 @@ public:
     void Draw(Shader& shader)
     {
         glBindVertexArray(VAO);
-		glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, vertex_count);
+		//glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0, vertex_count);
+		glDrawArrays(GL_POINTS, 0, vertex_count);
         glBindVertexArray(0);
     }
 private:

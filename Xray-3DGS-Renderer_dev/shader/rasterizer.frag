@@ -6,11 +6,10 @@ uniform mat4 MVP;
 uniform vec3 cameraPos;
 uniform float exposure;
 
-in float density;
-//out float mark;
-in vec2 center;
-in mat2 cov2D;
-in float mu;
+in float go_density;
+in vec2 go_center;
+in mat2 go_cov2D;
+in float go_mu;
 
 float det2(mat2 M) {
     return M[0][0]*M[1][1] - M[0][1]*M[1][0];
@@ -25,19 +24,19 @@ float det3(mat3 M) {
 
 void main()
 {
-    float detCov2D = det2(cov2D);
+    float detCov2D = det2(go_cov2D);
     if (detCov2D <= 0.0) {
         discard; // Invalid covariance, skip this fragment
     }
     float detInv = 1.0 / detCov2D;
-    vec3 cov = vec3(cov2D[0][0], cov2D[0][1], cov2D[1][1]);
+    vec3 cov = vec3(go_cov2D[0][0], go_cov2D[0][1], go_cov2D[1][1]);
     vec3 conic = vec3(cov.z * detInv, -cov.y * detInv, cov.x * detInv);
 
-    vec2 sub = gl_FragCoord.xy - center;
+    vec2 sub = gl_FragCoord.xy - go_center;
     float power = -0.5 * (conic.x * sub.x * sub.x + conic.z * sub.y * sub.y) - conic.y * sub.x * sub.y;
     if (power > 0){
         discard;
     }
-    float factor = density * mu *  exp(power);
-	FragColor = vec4(vec3(density * mu *  exp(power) * exposure), 1.0);
+    float factor = go_density * go_mu *  exp(power);
+	FragColor = vec4(vec3(go_density * go_mu *  exp(power) * exposure), 1.0);
 }

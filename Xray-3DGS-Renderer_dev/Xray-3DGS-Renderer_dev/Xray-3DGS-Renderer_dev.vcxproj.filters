@@ -103,5 +103,8 @@
     <None Include="..\shader\cube.vert">
       <Filter>资源文件\shader</Filter>
     </None>
+    <None Include="..\shader\shader.geom">
+      <Filter>资源文件\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

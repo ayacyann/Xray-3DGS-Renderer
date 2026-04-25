@@ -1,6 +1,6 @@
 #version 330 core
 
-layout (location = 0) in vec3 aCubePos;
+//layout (location = 0) in vec3 aCubePos;
 layout (location = 1) in vec3 aCenter;
 layout (location = 2) in vec3 aNormal;
 layout (location = 3) in float aDensity;
@@ -8,11 +8,11 @@ layout (location = 3) in float aDensity;
 layout (location = 5) in vec3 aScale;
 layout (location = 6) in vec4 aRot;
 
-out float density;
+out float vo_density;
 //out float mark;
-out vec2 center;
-out mat2 cov2D;
-out float mu;
+out vec2 vo_center;
+out mat2 vo_cov2D;
+out float vo_mu;
 
 uniform mat4 MVP;
 uniform mat4 viewMatrix;
@@ -30,7 +30,7 @@ mat3 computeCov3D(vec3 scale, mat3 rot){
     return transpose(M) * M;
 }
 
-mat2 computeCov2D(vec3 worldCenterPos, mat3 cov3D, out float mu){
+mat2 computeCov2D(vec3 worldCenterPos, mat3 cov3D, out float vo_mu){
     mat3 J;
     if (length(tanFov)<1e-3) {
         J = mat3(
@@ -72,13 +72,13 @@ mat2 computeCov2D(vec3 worldCenterPos, mat3 cov3D, out float mu){
     float circ = hata * hatd * hatf + 2.0 * hatb * hatc * hate - hata * hate * hate - hatd * hatc * hatc - hatf * hatb * hatb;
     float muSquare = 2 * 3.1415926 * max(abs(circ), eps) / max(abs(diamond), eps);
     if (muSquare > 0.0) {
-        mu = sqrt(muSquare);
+        vo_mu = sqrt(muSquare);
     }
-    mat2 cov2D = mat2(
+    mat2 vo_cov2D = mat2(
         vec2(hata, hatb),
         vec2(hatb, hatd)
     );
-    return cov2D;
+    return vo_cov2D;
 }
 
 mat3 quatToMat3(vec4 q) {
@@ -111,15 +111,16 @@ float softplus(float x) {
 void main()
 {
     //mark = aMark;
-    density = softplus(aDensity);
+    vo_density = softplus(aDensity);
     vec3 scale = exp(aScale).xzy;
     mat3 rotation = quatToMat3(aRot.xywz);
     vec4 centerNDC = MVP * vec4(aCenter.xzy, 1.0);
-    center = centerNDC.xy / centerNDC.w;
-    center = (center + 1.0) / 2.0 * screenSize;
+    vo_center = centerNDC.xy / centerNDC.w;
+    vo_center = (vo_center + 1.0) / 2.0 * screenSize;
     mat3 cov3D = computeCov3D(scale, rotation);
-    mu = 0;
-    cov2D = computeCov2D(aCenter.xzy, cov3D, mu);
-    vec3 worldPos = rotation * (scale * aCubePos * 3) + aCenter.xzy;
+    vo_mu = 0;
+    vo_cov2D = computeCov2D(aCenter.xzy, cov3D, vo_mu);
+    //vec3 worldPos = rotation * (scale * aCubePos * 3) + aCenter.xzy;
+    vec3 worldPos =  aCenter.xzy;
     gl_Position = MVP * vec4(worldPos, 1.0);
 }
