@@ -12,13 +12,16 @@ out float density;
 //out float mark;
 out vec2 center;
 out mat2 cov2D;
+out mat3 cov3D;
 out float mu;
+out vec3 centerGS;
 
 uniform mat4 MVP;
 uniform mat4 viewMatrix;
 uniform vec2 tanFov;
 uniform vec2 focal;
 uniform vec2 screenSize;
+uniform float sigma;
 
 mat3 computeCov3D(vec3 scale, mat3 rot){
     mat3 scaleMat = mat3(
@@ -112,14 +115,17 @@ void main()
 {
     //mark = aMark;
     density = softplus(aDensity);
-    vec3 scale = exp(aScale).xzy;
-    mat3 rotation = quatToMat3(aRot.xywz);
-    vec4 centerNDC = MVP * vec4(aCenter.xzy, 1.0);
+    vec3 scale = exp(aScale).yzx;
+	scale.z = -scale.z;
+    mat3 rotation = quatToMat3(aRot.xzwy);
+	centerGS = aCenter.yzx;
+	centerGS.z = -centerGS.z;
+    vec4 centerNDC = MVP * vec4(centerGS, 1.0);
     center = centerNDC.xy / centerNDC.w;
     center = (center + 1.0) / 2.0 * screenSize;
-    mat3 cov3D = computeCov3D(scale, rotation);
+    cov3D = computeCov3D(scale, rotation);
     mu = 0;
-    cov2D = computeCov2D(aCenter.xzy, cov3D, mu);
-    vec3 worldPos = rotation * (scale * aCubePos * 3) + aCenter.xzy;
+    cov2D = computeCov2D(centerGS, cov3D, mu);
+    vec3 worldPos = rotation * (scale * aCubePos * sigma) + centerGS;
     gl_Position = MVP * vec4(worldPos, 1.0);
 }

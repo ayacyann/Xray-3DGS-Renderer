@@ -26,8 +26,9 @@ namespace imgui_own_render_code
 {
     enum Axis { X, Y, Z };
 
-    int m_renderWidth = 512;
-    int m_renderHeight = 512;
+    int m_renderSize = 512;
+    int m_lastRenderSize = 512;
+	float sigma = 2.0f;
 
     unsigned int m_fbo;          // 帧缓冲对象
     unsigned int m_fboTexture; // FBO颜色附件（纹理）
@@ -63,7 +64,7 @@ namespace imgui_own_render_code
         CTCameraData data;
 
         float lim = 1.3;
-        float times = 1.5;
+        float times = 2 / lim;
         glm::vec3 eye, center, up, dir, cubePos;
         center = glm::vec3(0.0f, 0.0f, 0.0f);
         glm::mat4 model = glm::mat4(1.0f);
@@ -129,7 +130,7 @@ namespace imgui_own_render_code
         // 2. 创建纹理
         glGenTextures(1, &m_fboTexture);
         glBindTexture(GL_TEXTURE_2D, m_fboTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_renderWidth, m_renderHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_renderSize, m_renderSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
         // 纹理参数（ImGui显示必须设置）
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -152,7 +153,7 @@ namespace imgui_own_render_code
         // 2. 创建纹理
         glGenTextures(1, &m_ct_fboTexture);
         glBindTexture(GL_TEXTURE_2D, m_ct_fboTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_renderWidth, m_renderHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_renderSize, m_renderSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
         // 纹理参数（ImGui显示必须设置）
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -180,10 +181,10 @@ namespace imgui_own_render_code
     Shader cameraShader;
     Ownplymodel ourModel;
     Cube cameraPlane;
-    string vert_shader_path = "../shader/shader.vert";
-    string frag_shader_path = "../shader/shader.frag";
-    string model_path = "../resources/model/.ply/Lingo/foot.ply";
-	string params_path = "../resources/model/.ply/foot.json";
+    string vert_shader_path = "./shader/shader.vert";
+    string frag_shader_path = "./shader/shader.frag";
+    string model_path = "./model/Lingo/foot.ply";
+	string params_path = "./model/default.json";
     Camera camera(params_path);
 
     void update_shader()
@@ -212,16 +213,21 @@ namespace imgui_own_render_code
 
         cout << "create_shader_and_model" << endl;
 
-        cameraShader = Shader("../shader/cube.vert", "../shader/cube.frag");
+        cameraShader = Shader("./shader/cube.vert", "./shader/cube.frag");
 
         cameraPlane = Cube(cameraShader);
     }
 
     void render_scene()
     {
+		if (m_lastRenderSize != m_renderSize) {
+			create_framebuffer();
+			m_lastRenderSize = m_renderSize;
+		}
+
         CTCameraData data = GetCTCameraData(currentAxis, positionCT, 1.0 / float(voxelResulution));
 
-		glViewport(0, 0, m_renderWidth, m_renderHeight);
+		glViewport(0, 0, m_renderSize, m_renderSize);
         // 帧时间差
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
@@ -236,7 +242,7 @@ namespace imgui_own_render_code
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)m_renderWidth / (float)m_renderHeight, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 1.0f, 0.1f, 100.0f);
 
         if (isShowCameraPlane) {
             cameraShader.use();
@@ -256,7 +262,9 @@ namespace imgui_own_render_code
         shader.setMat4("viewMatrix", view);
         shader.setVec3("cameraPos", camera.Position);
         shader.setFloat("exposure", exposure);
-        shader.setVec2("screenSize", glm::vec2(m_renderWidth, m_renderHeight));
+        shader.setFloat("sigma", sigma);
+        shader.setVec2("screenSize", glm::vec2(m_renderSize, m_renderSize));
+        shader.setBool("isVoxelizer", false);
 
         ourModel.Draw(shader);
 
@@ -276,7 +284,10 @@ namespace imgui_own_render_code
         shader.setMat4("viewMatrix", data.view);
         shader.setVec3("cameraPos", data.position);
         shader.setFloat("exposure", exposureCT);
-        shader.setVec2("screenSize", glm::vec2(m_renderWidth, m_renderHeight));
+        shader.setFloat("sigma", sigma);
+        shader.setVec3("cubePos", data.position);
+        shader.setVec2("screenSize", glm::vec2(m_renderSize, m_renderSize));
+		shader.setBool("isVoxelizer", true);
 
         ourModel.Draw(shader);
 
@@ -290,7 +301,7 @@ namespace imgui_own_render_code
 	bool show_save_dialog = false;
 	bool is_save_xray = true;
 	bool show_params_dialog = false;
-    std::vector<unsigned char> pixels(m_renderWidth * m_renderHeight * 3);
+    std::vector<unsigned char> pixels(m_renderSize * m_renderSize * 3);
     static void choose_path(string& buttonLabel)
     {
         
@@ -391,9 +402,14 @@ namespace imgui_own_render_code
             // 4. 设置光标位置到计算好的居中点
             ImGui::SetCursorPos(cursorPos);
 
-			ImGui::Image((ImTextureID)(intptr_t)m_ct_fboTexture,
-				ImVec2(dim, dim),
-				ImVec2(0, 1), ImVec2(1, 0));
+            if (currentAxis==Y)
+			    ImGui::Image((ImTextureID)(intptr_t)m_ct_fboTexture,
+				    ImVec2(dim, dim),
+				    ImVec2(1, 1), ImVec2(0, 0));
+			else
+				ImGui::Image((ImTextureID)(intptr_t)m_ct_fboTexture,
+                    ImVec2(dim, dim),
+                    ImVec2(0, 1), ImVec2(1, 0));
 
             bool img_hovered = ImGui::IsItemHovered();
             bool mouse_clicked = ImGui::IsAnyMouseDown();
@@ -420,6 +436,9 @@ namespace imgui_own_render_code
             ImGui::Begin("Settings");                          // Create a window called "Hello, world!" and append into it.
 
             ImGui::Text("Imaging Setting");               // Display some text (you can use a format strings too)
+            ImGui::SameLine();
+            ImGui::SliderInt("Image Size", &m_renderSize, 256, 1024);
+            ImGui::SliderFloat("Sigma", &sigma, 1, 4);
             ImGui::Text("CT Axis Selection");
             ImGui::SameLine();
 			if (ImGui::RadioButton("X Axis", currentAxis == X)) {
@@ -443,9 +462,9 @@ namespace imgui_own_render_code
                 glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
 
                 // 3. 读取像素 (从显存读回 CPU 内存)
-                for (int y = 0; y < m_renderHeight; ++y) {
-                    glPixelStorei(GL_PACK_SKIP_ROWS, m_renderHeight - 1 - y);
-                    glReadPixels(0, y, m_renderWidth, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+                for (int y = 0; y < m_renderSize; ++y) {
+                    glPixelStorei(GL_PACK_SKIP_ROWS, m_renderSize - 1 - y);
+                    glReadPixels(0, y, m_renderSize, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
                 }
                 // 4. 恢复默认设置
                 glPixelStorei(GL_PACK_ROW_LENGTH, 0);
@@ -463,9 +482,9 @@ namespace imgui_own_render_code
                 glBindFramebuffer(GL_READ_FRAMEBUFFER, m_ct_fbo);
 
                 // 3. 读取像素 (从显存读回 CPU 内存)
-                for (int y = 0; y < m_renderHeight; ++y) {
-                    glPixelStorei(GL_PACK_SKIP_ROWS, m_renderHeight - 1 - y);
-                    glReadPixels(0, y, m_renderWidth, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+                for (int y = 0; y < m_renderSize; ++y) {
+                    glPixelStorei(GL_PACK_SKIP_ROWS, m_renderSize - 1 - y);
+                    glReadPixels(0, y, m_renderSize, 1, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
                 }
                 // 4. 恢复默认设置
                 glPixelStorei(GL_PACK_ROW_LENGTH, 0);
@@ -511,7 +530,7 @@ namespace imgui_own_render_code
                         // 写入文件
                         // 参数：文件名, 宽, 高, 通道数(3), 数据指针, 行步长(0表示紧密排列)
                         
-                        if (stbi_write_jpg(file_path.c_str(), m_renderWidth, m_renderHeight, 3, pixels.data(), 0)) {
+                        if (stbi_write_jpg(file_path.c_str(), m_renderSize, m_renderSize, 3, pixels.data(), 0)) {
                             std::cout << "Image Saved!" << std::endl;
                         }
                     }
@@ -542,7 +561,7 @@ namespace imgui_own_render_code
             ImGuiFileDialog::Instance()->OpenDialog(
                 "ChooseFileDlgKey",         // 对话框key
                 "Choose File",              // 标题
-                ".*,.vert",         // 过滤器
+                ".vert",         // 过滤器
                 config                      // 用config结构体传参
             );           
         }
@@ -578,7 +597,7 @@ namespace imgui_own_render_code
             ImGuiFileDialog::Instance()->OpenDialog(
                 "ChooseFileDlgKey",         // 对话框key
                 "Choose File",              // 标题
-                ".*,.frag",         // 过滤器
+                ".frag",         // 过滤器
                 config                      // 用config结构体传参
             );           
         }
@@ -669,6 +688,7 @@ namespace imgui_own_render_code
                     printf("选择文件: %s\n", file_path.c_str());
                 }
 				camera.UpdateCameraParameters(params_path);
+				m_renderSize = camera.ScreenSize.x;
                 // 关闭对话框
                 ImGuiFileDialog::Instance()->Close();
                 show_params_dialog = false;
