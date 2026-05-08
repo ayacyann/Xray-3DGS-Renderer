@@ -13,6 +13,7 @@ out float vo_density;
 out vec2 vo_center;
 out mat2 vo_cov2D;
 out float vo_mu;
+out float vo_radius;
 
 uniform mat4 MVP;
 uniform mat4 viewMatrix;
@@ -78,6 +79,16 @@ mat2 computeCov2D(vec3 worldCenterPos, mat3 cov3D, out float vo_mu){
         vec2(hata, hatb),
         vec2(hatb, hatd)
     );
+    float mid = 0.5 * (hata + hatd);
+    float det = hata * hatd - hatb * hatb;
+    if (abs(det) < 1e-10) {
+        vo_radius = -1.0;
+        return vo_cov2D;
+    }
+    float disc = max(0.1, mid * mid - det);
+    float lambda1 = mid + sqrt(disc);
+    float lambda2 = mid - sqrt(disc);
+    vo_radius = ceil(3.0 * sqrt(max(lambda1, lambda2)));
     return vo_cov2D;
 }
 
@@ -123,4 +134,8 @@ void main()
     //vec3 worldPos = rotation * (scale * aCubePos * 3) + aCenter.xzy;
     vec3 worldPos =  aCenter.xzy;
     gl_Position = MVP * vec4(worldPos, 1.0);
+    // Near culling
+    if (gl_Position.z <= 0.2) {
+        vo_radius = -1.0; // signal to geometry shader to discard
+    }
 }

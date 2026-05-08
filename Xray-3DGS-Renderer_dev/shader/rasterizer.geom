@@ -7,6 +7,7 @@ in float vo_density[];
 in vec2 vo_center[];
 in mat2 vo_cov2D[];
 in float vo_mu[];
+in float vo_radius[];
 
 out float go_density;
 out vec2 go_center;
@@ -15,61 +16,41 @@ out float go_mu;
 
 uniform vec2 screenSize;
 
+float det2(mat2 M) {
+    return M[0][0]*M[1][1] - M[0][1]*M[1][0];
+}
+
 void main()
 {
-    mat2 cov = vo_cov2D[0];
+    // Discard if vertex shader signaled invalid Gaussian (radius < 0)
+    if (vo_radius[0] < 0.0)
+        return;
 
-    // ---- eigen decomposition of 2x2 symmetric matrix ----
-    float a = cov[0][0];
-    float b = cov[0][1];
-    float c = cov[1][1];
+    vec4 center_clip = gl_in[0].gl_Position;
+    float radius = vo_radius[0];
 
-    float trace = a + c;
-    float det   = a*c - b*b;
+    // Convert pixel offset to clip-space offset
+    // 1 pixel in NDC = 2.0 / screen_size
+    // Clip offset = NDC offset * w
+    float dx_clip = radius * 2.0 / screenSize.x * center_clip.w;
+    float dy_clip = radius * 2.0 / screenSize.y * center_clip.w;
 
-    float s = sqrt(max(trace*trace*0.25 - det, 0.0));
-
-    float lambda1 = trace*0.5 + s;
-    float lambda2 = trace*0.5 - s;
-
-    // eigenvectors
-    vec2 v1;
-    if (abs(b) > 1e-6)
-        v1 = normalize(vec2(lambda1 - c, b));
-    else
-        v1 = vec2(1,0);
-
-    vec2 v2 = vec2(-v1.y, v1.x);
-
-    mat2 R = mat2(v1, v2);
-
-    // 3 sigma scale
-    vec2 sigma = 3.0 * sqrt(max(vec2(lambda1, lambda2), 0.0));
-
-    // unit square
-    vec2 corners[4] = vec2[](
-        vec2(-1,-1),
-        vec2( 1,-1),
-        vec2(-1, 1),
-        vec2( 1, 1)
+    vec4 offsets[4] = vec4[4](
+        vec4(-dx_clip, -dy_clip, 0.0, 0.0),  // bottom-left
+        vec4( dx_clip, -dy_clip, 0.0, 0.0),  // bottom-right
+        vec4(-dx_clip,  dy_clip, 0.0, 0.0),  // top-left
+        vec4( dx_clip,  dy_clip, 0.0, 0.0)   // top-right
     );
 
-    go_density = vo_density[0];
-    go_center  = vo_center[0];
-    go_cov2D   = cov;
-    go_mu      = vo_mu[0];
+    // Pass through uniform values (same for all quad corners)
+    go_cov2D      = vo_cov2D[0];
+    go_density    = vo_density[0];
+    go_mu         = vo_mu[0];
+    go_center = vo_center[0];
 
-    vec4 center = gl_in[0].gl_Position;
-
-    for(int i=0;i<4;i++)
-    {
-        vec2 p = corners[i];
-
-        // scale -> rotate
-        vec2 offset = R * (p * sigma) * 0.05;
-        gl_Position = center + vec4(offset, 0.0, 0.0);
+    for (int i = 0; i < 4; i++) {
+        gl_Position = center_clip + offsets[i];
         EmitVertex();
     }
-
     EndPrimitive();
 }

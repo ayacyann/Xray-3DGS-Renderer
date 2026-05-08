@@ -157,9 +157,9 @@
   <ItemGroup>
     <None Include="..\shader\cube.frag" />
     <None Include="..\shader\cube.vert" />
-    <None Include="..\shader\shader.frag" />
-    <None Include="..\shader\shader.geom" />
-    <None Include="..\shader\shader.vert" />
+    <None Include="..\shader\rasterizer.frag" />
+    <None Include="..\shader\rasterizer.geom" />
+    <None Include="..\shader\rasterizer.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
