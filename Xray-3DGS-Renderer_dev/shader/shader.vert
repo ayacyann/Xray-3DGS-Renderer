@@ -115,11 +115,10 @@ void main()
 {
     //mark = aMark;
     density = softplus(aDensity);
-    vec3 scale = exp(aScale).yzx;
-	scale.z = -scale.z;
-    mat3 rotation = quatToMat3(aRot.xzwy);
-	centerGS = aCenter.yzx;
+    vec3 scale = exp(aScale).xzy;
+    mat3 rotation = quatToMat3(aRot.xywz);
 	centerGS.z = -centerGS.z;
+	centerGS = aCenter.xzy;
     vec4 centerNDC = MVP * vec4(centerGS, 1.0);
     center = centerNDC.xy / centerNDC.w;
     center = (center + 1.0) / 2.0 * screenSize;

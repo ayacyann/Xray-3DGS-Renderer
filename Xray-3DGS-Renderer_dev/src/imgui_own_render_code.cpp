@@ -435,8 +435,8 @@ namespace imgui_own_render_code
         {
             ImGui::Begin("Settings");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("Imaging Setting");               // Display some text (you can use a format strings too)
-            ImGui::SameLine();
+            //ImGui::Text("Imaging Setting");               // Display some text (you can use a format strings too)
+            //ImGui::SameLine();
             ImGui::SliderInt("Image Size", &m_renderSize, 256, 1024);
             ImGui::SliderFloat("Sigma", &sigma, 1, 4);
             ImGui::Text("CT Axis Selection");
